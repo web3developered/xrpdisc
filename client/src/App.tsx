@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { connectCrossmark, connectGemWallet, type WalletConnection } from "./wallets";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
 type Mode = "swap" | "bridge" | "stake";
 
 const modes: { id: Mode; title: string; subtitle: string }[] = [
