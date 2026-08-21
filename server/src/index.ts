@@ -3,8 +3,6 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { Client, isValidClassicAddress, xrpToDrops } from "xrpl";
 
@@ -81,11 +79,4 @@ app.post("/api/transactions/submit", async (req, res) => {
   }
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const clientDist = path.resolve(__dirname, "../../client/dist");
-
-app.use(express.static(clientDist));
-app.get("*splat", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
-
-app.listen(port, () => console.log(`XRPL DeFi server listening on ${port}`));
+app.listen(port, "0.0.0.0", () => console.log(`XRPL DeFi API listening on ${port}`));
