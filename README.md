@@ -80,23 +80,8 @@ WalletConnect is left behind a capability boundary rather than pretending XRPL s
 
 ## Railway two-service deployment
 
-Use the same GitHub repository for two Railway services.
+Frontend service: Root Directory `/client`; Build `npm run build`; Start `npm run start`; Healthcheck `/`.
+Set `VITE_API_BASE_URL` to the backend public Railway URL.
 
-### Frontend
-- Root Directory: `/client`
-- Build Command: `npm run build`
-- Start Command: `npm run start`
-- Healthcheck: `/`
-- Variable: `VITE_API_BASE_URL=https://YOUR-BACKEND-DOMAIN`
-
-### Backend
-- Root Directory: `/server`
-- Build Command: `npm run build`
-- Start Command: `npm run start`
-- Healthcheck: `/api/health`
-- `NODE_ENV=production`
-- `XRPL_NETWORK=testnet`
-- `XRPL_WS_URL=wss://s.altnet.rippletest.net:51233`
-- `CORS_ORIGIN=https://YOUR-FRONTEND-DOMAIN`
-
-The frontend and backend are intentionally separate Railway services. Do not use `/api/health` as the frontend healthcheck.
+Backend service: Root Directory `/server`; Build `npm run build`; Start `npm run start`; Healthcheck `/api/health`.
+Set `CORS_ORIGIN` to the frontend public URL and keep XRPL Testnet enabled until integration testing is complete.
