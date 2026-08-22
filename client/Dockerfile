@@ -14,9 +14,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /app/dist ./dist
-COPY --from=deps /app/node_modules ./node_modules
-COPY package*.json ./
+COPY package*.json server.mjs ./
 USER app
-EXPOSE 4173
+EXPOSE 8080
 CMD ["npm", "run", "start"]
 
