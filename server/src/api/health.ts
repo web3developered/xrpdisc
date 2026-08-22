@@ -8,14 +8,17 @@ export async function registerHealthRoutes(app: FastifyInstance, config: AppConf
     version: "0.1.0"
   }));
 
-  app.get("/ready", async () => ({
-    status: "ok",
-    checks: {
-      environment: config.NODE_ENV,
-      xrplNetwork: config.XRPL_NETWORK,
-      databaseConfigured: Boolean(config.DATABASE_URL),
-      redisConfigured: Boolean(config.REDIS_URL)
-    }
-  }));
-}
+  app.get("/ready", async () => {
+    const databaseConfigured = Boolean(config.DATABASE_URL);
 
+    return {
+      status: databaseConfigured ? "ok" : "degraded",
+      checks: {
+        environment: config.NODE_ENV,
+        xrplNetwork: config.XRPL_NETWORK,
+        databaseConfigured,
+        redisConfigured: Boolean(config.REDIS_URL)
+      }
+    };
+  });
+}
