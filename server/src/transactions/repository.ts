@@ -10,6 +10,11 @@ export class InMemoryTransactionIntentRepository {
     return intent;
   }
 
+  update(intent: TransactionIntent): TransactionIntent {
+    this.intents.set(intent.id, intent);
+    return intent;
+  }
+
   findById(id: string): TransactionIntent | null {
     return this.intents.get(id) ?? null;
   }
@@ -19,4 +24,3 @@ export class InMemoryTransactionIntentRepository {
     return id ? this.findById(id) : null;
   }
 }
-

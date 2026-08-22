@@ -165,4 +165,155 @@ describe("server shell", () => {
     expect(second.json().intent.id).toBe(first.json().intent.id);
     await app.close();
   });
+
+  it("accepts a signed transaction only when it matches the original intent fingerprint", async () => {
+    const app = await buildApp(config);
+    const sessionResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/sessions",
+      payload: {
+        walletAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        walletProvider: "gemwallet",
+        network: "testnet"
+      }
+    });
+    const intentResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/intents",
+      payload: {
+        sessionId: sessionResponse.json().session.id,
+        transactionType: "Payment",
+        destination: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+        amountDrops: "1000"
+      }
+    });
+    const intent = intentResponse.json().intent;
+
+    const signatureResponse = await app.inject({
+      method: "POST",
+      url: `/api/v1/transactions/${intent.id}/signature`,
+      payload: {
+        signerAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        signedTransactionHash: "A".repeat(64),
+        txBlob: "DEADBEEFDEADBEEF",
+        unsignedTransactionFingerprint: intent.intentFingerprint
+      }
+    });
+
+    expect(signatureResponse.statusCode).toBe(200);
+    expect(signatureResponse.json()).toMatchObject({
+      intent: {
+        status: "SIGNED",
+        signedTransaction: {
+          signerAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+          signedTransactionHash: "A".repeat(64)
+        }
+      }
+    });
+    await app.close();
+  });
+
+  it("rejects signed transactions that do not match the intent fingerprint", async () => {
+    const app = await buildApp(config);
+    const sessionResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/sessions",
+      payload: {
+        walletAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        walletProvider: "gemwallet",
+        network: "testnet"
+      }
+    });
+    const intentResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/intents",
+      payload: {
+        sessionId: sessionResponse.json().session.id,
+        transactionType: "Payment",
+        destination: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+        amountDrops: "1000"
+      }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/transactions/${intentResponse.json().intent.id}/signature`,
+      payload: {
+        signerAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        signedTransactionHash: "B".repeat(64),
+        txBlob: "DEADBEEFDEADBEEF",
+        unsignedTransactionFingerprint: "C".repeat(64)
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ error: "BAD_REQUEST" });
+    await app.close();
+  });
+
+  it("blocks submission without a configured XRPL client and marks monitoring terminal", async () => {
+    const app = await buildApp(config);
+    const sessionResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/sessions",
+      payload: {
+        walletAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        walletProvider: "gemwallet",
+        network: "testnet"
+      }
+    });
+    const intentResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/intents",
+      payload: {
+        sessionId: sessionResponse.json().session.id,
+        transactionType: "Payment",
+        destination: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+        amountDrops: "1000"
+      }
+    });
+    const intent = intentResponse.json().intent;
+    await app.inject({
+      method: "POST",
+      url: `/api/v1/transactions/${intent.id}/signature`,
+      payload: {
+        signerAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        signedTransactionHash: "D".repeat(64),
+        txBlob: "DEADBEEFDEADBEEF",
+        unsignedTransactionFingerprint: intent.intentFingerprint
+      }
+    });
+
+    const submitResponse = await app.inject({
+      method: "POST",
+      url: `/api/v1/transactions/${intent.id}/submit`
+    });
+    expect(submitResponse.statusCode).toBe(409);
+    expect(submitResponse.json()).toMatchObject({
+      error: "XRPL_SUBMISSION_BLOCKED",
+      intent: {
+        status: "FAILED",
+        submission: {
+          status: "blocked"
+        },
+        monitoring: {
+          status: "terminal",
+          terminal: true
+        }
+      }
+    });
+
+    const monitorResponse = await app.inject({
+      method: "POST",
+      url: `/api/v1/transactions/${intent.id}/monitor`
+    });
+    expect(monitorResponse.statusCode).toBe(200);
+    expect(monitorResponse.json()).toMatchObject({
+      status: "FAILED",
+      monitoring: {
+        terminal: true
+      }
+    });
+    await app.close();
+  });
 });

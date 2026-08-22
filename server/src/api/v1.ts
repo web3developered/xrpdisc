@@ -24,6 +24,13 @@ const createPaymentIntentSchema = z.object({
   memo: z.string().max(256).optional()
 });
 
+const acceptSignatureSchema = z.object({
+  signerAddress: z.string().min(25).max(35),
+  signedTransactionHash: z.string().regex(/^[A-Fa-f0-9]{64}$/),
+  txBlob: z.string().regex(/^[A-Fa-f0-9]+$/).min(16),
+  unsignedTransactionFingerprint: z.string().regex(/^[A-Fa-f0-9]{64}$/)
+});
+
 function badRequest(error: unknown) {
   return {
     error: "BAD_REQUEST",
@@ -106,7 +113,56 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
         transactionType: intent.transactionType,
         autofillStatus: intent.autofillStatus,
         policyWarnings: intent.policyWarnings,
+        signedTransactionHash: intent.signedTransaction?.signedTransactionHash,
+        submission: intent.submission,
+        monitoring: intent.monitoring,
         updatedAt: intent.updatedAt
+      });
+    } catch (error) {
+      return reply.code(404).send({ error: "NOT_FOUND", message: (error as Error).message });
+    }
+  });
+
+  app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/signature", async (request, reply) => {
+    const parsed = acceptSignatureSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send(badRequest(parsed.error));
+    }
+
+    try {
+      const intent = transactionIntentService.acceptSignature({
+        intentId: request.params.id,
+        signerAddress: parsed.data.signerAddress,
+        signedTransactionHash: parsed.data.signedTransactionHash,
+        txBlob: parsed.data.txBlob,
+        unsignedTransactionFingerprint: parsed.data.unsignedTransactionFingerprint
+      });
+      return reply.send({ intent });
+    } catch (error) {
+      return reply.code(400).send(badRequest(error));
+    }
+  });
+
+  app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/submit", async (request, reply) => {
+    try {
+      const intent = transactionIntentService.submit(request.params.id);
+      return reply.code(409).send({
+        error: "XRPL_SUBMISSION_BLOCKED",
+        message: intent.submission?.failureReason,
+        intent
+      });
+    } catch (error) {
+      return reply.code(400).send(badRequest(error));
+    }
+  });
+
+  app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/monitor", async (request, reply) => {
+    try {
+      const intent = transactionIntentService.monitor(request.params.id);
+      return reply.send({
+        transactionId: intent.id,
+        status: intent.status,
+        monitoring: intent.monitoring
       });
     } catch (error) {
       return reply.code(404).send({ error: "NOT_FOUND", message: (error as Error).message });

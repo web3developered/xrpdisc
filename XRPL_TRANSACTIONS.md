@@ -9,6 +9,17 @@ Phase 3 implements backend wallet sessions and transaction intent tracking.
 Phase 4 implements validated unsigned `Payment` intent generation with backend policy controls.
 The backend does not accept arbitrary transaction blobs from the frontend.
 
+Phase 5 implements the signing boundary API and signed transaction envelope checks:
+
+- signer address must match the original intent account
+- signed transaction hash must be a 64-character hex string
+- signed transaction blob must be hex encoded
+- submitted fingerprint must match the approved unsigned intent fingerprint
+- submission is blocked until a real XRPL client can submit the signed blob
+
+Phase 6 implements process-local monitoring records and terminal blocked-submission state. Durable
+PostgreSQL-backed monitoring is still NOT IMPLEMENTED.
+
 Allowed initial transaction type:
 
 - `Payment`
@@ -43,6 +54,6 @@ State machine:
 - `REJECTED`
 
 Runtime state transition enforcement helper is implemented for transaction services, but signature,
-submission, validation, monitoring, and persistence-backed replay protection remain NOT IMPLEMENTED
-until later phases.
+network submission, validation, and persistence-backed replay protection are not production-ready
+until the official XRPL client and PostgreSQL repositories are wired.
 

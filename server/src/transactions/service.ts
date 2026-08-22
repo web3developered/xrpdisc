@@ -3,7 +3,14 @@ import type { AppConfig } from "../config/env.js";
 import { generatePaymentTransaction } from "../xrpl/payment-policy.js";
 import { createIntentFingerprint } from "./fingerprint.js";
 import type { InMemoryTransactionIntentRepository } from "./repository.js";
-import type { CreatePaymentIntentInput, TransactionIntent } from "./types.js";
+import { assertTransition } from "./state-machine.js";
+import type {
+  AcceptSignatureInput,
+  CreatePaymentIntentInput,
+  SubmissionRecord,
+  TransactionIntent,
+  TransactionStatus
+} from "./types.js";
 
 export class TransactionIntentService {
   constructor(
@@ -55,5 +62,105 @@ export class TransactionIntentService {
       throw new Error("Transaction intent not found");
     }
     return intent;
+  }
+
+  acceptSignature(input: AcceptSignatureInput): TransactionIntent {
+    const intent = this.getIntent(input.intentId);
+    if (intent.status !== "AWAITING_SIGNATURE") {
+      throw new Error(`Cannot accept signature while transaction is ${intent.status}`);
+    }
+    if (input.signerAddress !== intent.unsignedTransaction.Account) {
+      throw new Error("Signed transaction signer does not match intent account");
+    }
+    if (input.unsignedTransactionFingerprint !== intent.intentFingerprint) {
+      throw new Error("Signed transaction does not correspond to the approved unsigned intent");
+    }
+    if (!/^[A-Fa-f0-9]+$/.test(input.txBlob) || input.txBlob.length < 16) {
+      throw new Error("Signed transaction blob must be hex encoded");
+    }
+    if (!/^[A-Fa-f0-9]{64}$/.test(input.signedTransactionHash)) {
+      throw new Error("Signed transaction hash must be a 64-character hex string");
+    }
+
+    return this.transition(intent, "SIGNED", {
+      signedTransaction: {
+        signerAddress: input.signerAddress,
+        signedTransactionHash: input.signedTransactionHash.toUpperCase(),
+        txBlob: input.txBlob.toUpperCase(),
+        acceptedAt: new Date().toISOString()
+      }
+    });
+  }
+
+  submit(intentId: string): TransactionIntent {
+    const intent = this.getIntent(intentId);
+    if (intent.status !== "SIGNED") {
+      throw new Error(`Cannot submit transaction while it is ${intent.status}`);
+    }
+
+    const failureReason =
+      "XRPL submission is blocked until the official XRPL client dependency is installed and configured.";
+    const submission: SubmissionRecord = {
+      attemptId: randomUUID(),
+      status: "blocked",
+      failureReason,
+      createdAt: new Date().toISOString()
+    };
+
+    const submitting = this.transition(intent, "SUBMITTING", {
+      submission
+    });
+
+    return this.transition(submitting, "FAILED", {
+      submission,
+      monitoring: {
+        status: "terminal",
+        lastCheckedAt: new Date().toISOString(),
+        terminal: true,
+        reason: failureReason
+      }
+    });
+  }
+
+  monitor(intentId: string): TransactionIntent {
+    const intent = this.getIntent(intentId);
+    const now = new Date().toISOString();
+    if (["VALIDATED", "FAILED", "EXPIRED", "CANCELLED", "REJECTED"].includes(intent.status)) {
+      const reason = intent.submission?.failureReason ?? `Transaction is terminal: ${intent.status}`;
+      return this.repository.update({
+        ...intent,
+        monitoring: {
+          status: "terminal",
+          lastCheckedAt: now,
+          terminal: true,
+          reason
+        },
+        updatedAt: now
+      });
+    }
+
+    return this.repository.update({
+      ...intent,
+      monitoring: {
+        status: intent.status === "SUBMITTED" ? "waiting_for_validation" : "waiting_for_submission",
+        lastCheckedAt: now,
+        terminal: false
+      },
+      updatedAt: now
+    });
+  }
+
+  private transition(
+    intent: TransactionIntent,
+    to: TransactionStatus,
+    patch: Partial<TransactionIntent> = {}
+  ): TransactionIntent {
+    assertTransition(intent.status, to);
+    return this.repository.update({
+      ...intent,
+      ...patch,
+      status: to,
+      updatedAt: new Date().toISOString()
+    });
   }
 }
