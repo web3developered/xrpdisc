@@ -8,6 +8,16 @@ const envSchema = z
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
     XRPL_RPC_URL: z.string().min(1).default("wss://s.altnet.rippletest.net:51233"),
+    AUTHORIZED_XRP_DESTINATIONS: z
+      .string()
+      .default("")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((destination) => destination.trim())
+          .filter(Boolean)
+      ),
+    MAX_PAYMENT_DROPS: z.coerce.number().int().positive().default(1_000_000),
     DATABASE_URL: z.string().min(1).optional(),
     REDIS_URL: z.string().min(1).optional(),
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(1800),
@@ -21,6 +31,18 @@ const envSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Mainnet requires REQUIRE_EXPLICIT_MAINNET_ENABLE=true"
+      });
+    }
+    if (env.XRPL_NETWORK === "mainnet" && env.XRPL_RPC_URL.includes("altnet")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Mainnet requires an explicit mainnet XRPL_RPC_URL"
+      });
+    }
+    if (env.XRPL_NETWORK === "mainnet" && env.AUTHORIZED_XRP_DESTINATIONS.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Mainnet requires at least one AUTHORIZED_XRP_DESTINATIONS address"
       });
     }
   });

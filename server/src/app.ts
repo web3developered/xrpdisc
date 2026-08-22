@@ -22,7 +22,7 @@ export async function buildApp(config: AppConfig) {
   });
   await app.register(registerRequestIdHook);
   await app.register(registerHealthRoutes, config);
-  await app.register(registerV1Routes);
+  await app.register(registerV1Routes, config);
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error({ error }, "request failed");

@@ -1,0 +1,22 @@
+export type XrplNetwork = "testnet" | "mainnet";
+
+export type XrplPaymentTransaction = {
+  TransactionType: "Payment";
+  Account: string;
+  Destination: string;
+  Amount: string;
+  DestinationTag?: number;
+  Memos?: Array<{
+    Memo: {
+      MemoType?: string;
+      MemoData?: string;
+    };
+  }>;
+};
+
+export type GeneratedPayment = {
+  transaction: XrplPaymentTransaction;
+  autofillStatus: "requires_xrpl_client";
+  policyWarnings: string[];
+};
+
