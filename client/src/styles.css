@@ -118,6 +118,35 @@ button {
 .status-grid strong {
   display: block;
   margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.connection-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  line-height: 1.4;
+}
+
+.connection-banner svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.connection-banner.success {
+  border: 1px solid #9ccfba;
+  background: #eef9f2;
+  color: #24523d;
+}
+
+.connection-banner.warning {
+  border: 1px solid #edc38b;
+  background: #fff8ed;
+  color: #6e4518;
 }
 
 .panel-heading {
@@ -157,6 +186,29 @@ button {
 .wallet-option span {
   display: block;
   font-weight: 750;
+}
+
+.wallet-option-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wallet-option-title svg {
+  width: 18px;
+  height: 18px;
+  color: #47626b;
+  flex: 0 0 auto;
+}
+
+.wallet-option em {
+  display: block;
+  margin-top: 8px;
+  color: #51646c;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
 }
 
 @media (max-width: 760px) {

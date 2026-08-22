@@ -1,4 +1,4 @@
-export type WalletProviderId = "xaman" | "crossmark" | "gemwallet" | "walletconnect" | "ledger";
+export type { WalletId as WalletProviderId } from "../wallets/types";
 
 export type HealthResponse = {
   status: "ok" | "degraded" | "unavailable";

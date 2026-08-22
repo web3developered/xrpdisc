@@ -12,11 +12,13 @@ vi.stubGlobal("fetch", vi.fn(() =>
 ));
 
 describe("client shell", () => {
-  it("renders the Phase 1 signing-boundary language", async () => {
+  it("renders the Phase 2 wallet-boundary language", async () => {
     document.body.innerHTML = '<div id="root"></div>';
     await import("./main");
     expect(await screen.findByText("XRPL DeFi")).toBeInTheDocument();
-    expect(screen.getByText(/NOT IMPLEMENTED until their scheduled phases/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connecting a wallet only identifies the account/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Xaman/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /GemWallet/i })).toBeInTheDocument();
   });
 
   it("can render an empty strict mode root", () => {
