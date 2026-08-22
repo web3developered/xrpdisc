@@ -24,6 +24,20 @@ describe("server shell", () => {
     await app.close();
   });
 
+  it("reports degraded readiness when persistence is not configured", async () => {
+    const app = await buildApp({ ...config, DATABASE_URL: undefined, REDIS_URL: undefined });
+    const response = await app.inject({ method: "GET", url: "/ready" });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      status: "degraded",
+      checks: {
+        databaseConfigured: false,
+        redisConfigured: false
+      }
+    });
+    await app.close();
+  });
+
   it("marks Phase 2+ APIs as not implemented", async () => {
     const app = await buildApp(config);
     const response = await app.inject({ method: "POST", url: "/api/v1/sessions" });
@@ -32,4 +46,3 @@ describe("server shell", () => {
     await app.close();
   });
 });
-
