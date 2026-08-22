@@ -8,7 +8,7 @@ const envSchema = z
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
     XRPL_RPC_URL: z.string().min(1).default("wss://s.altnet.rippletest.net:51233"),
-    DATABASE_URL: z.string().min(1),
+    DATABASE_URL: z.string().min(1).optional(),
     REDIS_URL: z.string().min(1).optional(),
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(1800),
     REQUIRE_EXPLICIT_MAINNET_ENABLE: z
@@ -30,4 +30,3 @@ export type AppConfig = z.infer<typeof envSchema>;
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   return envSchema.parse(source);
 }
-
