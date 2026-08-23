@@ -14,6 +14,9 @@ GET  /api/v1/transactions/:id/status
 POST /api/v1/transactions/:id/signature
 POST /api/v1/transactions/:id/submit
 POST /api/v1/transactions/:id/monitor
+POST /api/v1/sell/quote
+POST /api/v1/sell/intents
+GET  /api/v1/sell/intents/:id/status
 ```
 
 `POST /api/v1/sessions`
@@ -73,11 +76,40 @@ backend refuses to fake network submission.
 Records monitoring status for an intent. For blocked submissions, monitoring becomes terminal with
 the failure reason.
 
+`POST /api/v1/sell/quote`
+
+Starts the Sell All flow for an active wallet session. The endpoint never accepts frontend-provided
+balances. It must discover authoritative XRPL balances through the backend XRPL asset discovery
+boundary. Until the XRPL client is configured, the production route returns
+`503 XRPL_ASSET_DISCOVERY_UNAVAILABLE`.
+
+```json
+{
+  "sessionId": "uuid"
+}
+```
+
+`POST /api/v1/sell/intents`
+
+Creates an idempotent sell intent from a backend-generated quote. The intent contains exact assets,
+eligibility decisions, company destination, and prepared XRPL `Payment` transaction plans.
+
+```json
+{
+  "quoteId": "uuid"
+}
+```
+
+`GET /api/v1/sell/intents/:id/status`
+
+Returns the aggregate sell state, per-asset transaction states, destination, and settlement handoff
+flag. Confirmed sell records are for the existing settlement/accounting infrastructure; this API
+does not credit cash balances.
+
 Still reserved but NOT IMPLEMENTED:
 
 ```http
-POST /api/v1/sell/quote
-POST /api/v1/sell/intents
+POST /api/v1/transactions/:id/confirm
 ```
 
 No endpoint accepts arbitrary XRPL transaction blobs from the frontend.

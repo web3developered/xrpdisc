@@ -18,6 +18,17 @@ const envSchema = z
           .filter(Boolean)
       ),
     MAX_PAYMENT_DROPS: z.coerce.number().int().positive().default(1_000_000),
+    XRP_RESERVE_DROPS: z.coerce.number().int().positive().default(10_000_000),
+    XRP_TRANSACTION_COST_DROPS: z.coerce.number().int().positive().default(12),
+    SUPPORTED_ISSUED_ASSETS: z
+      .string()
+      .default("")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((asset) => asset.trim())
+          .filter(Boolean)
+      ),
     DATABASE_URL: z.string().min(1).optional(),
     REDIS_URL: z.string().min(1).optional(),
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(1800),

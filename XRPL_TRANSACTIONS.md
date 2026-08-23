@@ -20,6 +20,18 @@ Phase 5 implements the signing boundary API and signed transaction envelope chec
 Phase 6 implements process-local monitoring records and terminal blocked-submission state. Durable
 PostgreSQL-backed monitoring is still NOT IMPLEMENTED.
 
+Phase 7 implements Sell All orchestration boundaries:
+
+- backend-only company destination from `AUTHORIZED_XRP_DESTINATIONS`
+- authoritative asset discovery boundary, currently unavailable in production until XRPL client is wired
+- XRP reserve and estimated transaction-cost protection
+- platform allowlist for issued assets via `SUPPORTED_ISSUED_ASSETS`
+- idempotent sell intent creation
+- per-asset transaction plans
+- partial success aggregation
+- settlement-ready flag for confirmed assets
+- no fiat/cash crediting
+
 Allowed initial transaction type:
 
 - `Payment`
@@ -37,6 +49,12 @@ Current autofill status:
 - `autofillStatus: "requires_xrpl_client"`
 - Sequence, Fee, and LastLedgerSequence are not fabricated.
 - Install and verify the official XRPL client dependency before enabling network autofill.
+
+Sell-specific environment:
+
+- `XRP_RESERVE_DROPS` controls retained XRP reserve.
+- `XRP_TRANSACTION_COST_DROPS` controls the estimated XRP transaction fee held back.
+- `SUPPORTED_ISSUED_ASSETS` is a comma-separated allowlist in `CURRENCY.ISSUER` form.
 
 State machine:
 

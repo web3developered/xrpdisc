@@ -4,7 +4,13 @@ export type XrplPaymentTransaction = {
   TransactionType: "Payment";
   Account: string;
   Destination: string;
-  Amount: string;
+  Amount:
+    | string
+    | {
+        currency: string;
+        issuer: string;
+        value: string;
+      };
   DestinationTag?: number;
   Memos?: Array<{
     Memo: {
@@ -19,4 +25,3 @@ export type GeneratedPayment = {
   autofillStatus: "requires_xrpl_client";
   policyWarnings: string[];
 };
-

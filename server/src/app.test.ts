@@ -11,6 +11,9 @@ const config: AppConfig = {
   XRPL_RPC_URL: "wss://s.altnet.rippletest.net:51233",
   AUTHORIZED_XRP_DESTINATIONS: ["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   MAX_PAYMENT_DROPS: 1_000_000,
+  XRP_RESERVE_DROPS: 10_000_000,
+  XRP_TRANSACTION_COST_DROPS: 12,
+  SUPPORTED_ISSUED_ASSETS: ["USD.rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/xrpl_defi",
   REDIS_URL: "redis://localhost:6379",
   SESSION_TTL_SECONDS: 1800,
@@ -314,6 +317,32 @@ describe("server shell", () => {
         terminal: true
       }
     });
+    await app.close();
+  });
+
+  it("does not accept frontend-provided balances for sell quotes when XRPL discovery is unavailable", async () => {
+    const app = await buildApp(config);
+    const sessionResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/sessions",
+      payload: {
+        walletAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        walletProvider: "gemwallet",
+        network: "testnet"
+      }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/sell/quote",
+      payload: {
+        sessionId: sessionResponse.json().session.id,
+        clientClaimedBalance: "999999999999"
+      }
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({ error: "XRPL_ASSET_DISCOVERY_UNAVAILABLE" });
     await app.close();
   });
 });

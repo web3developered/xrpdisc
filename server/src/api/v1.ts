@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config/env.js";
+import { UnavailableAssetDiscovery } from "../sell/discovery.js";
+import { InMemorySellRepository } from "../sell/repository.js";
+import { SellService } from "../sell/service.js";
 import { InMemorySessionRepository } from "../sessions/repository.js";
 import { SessionService } from "../sessions/service.js";
 import { InMemoryTransactionIntentRepository } from "../transactions/repository.js";
@@ -24,6 +27,10 @@ const createPaymentIntentSchema = z.object({
   memo: z.string().max(256).optional()
 });
 
+const createSellIntentSchema = z.object({
+  quoteId: z.string().uuid()
+});
+
 const acceptSignatureSchema = z.object({
   signerAddress: z.string().min(25).max(35),
   signedTransactionHash: z.string().regex(/^[A-Fa-f0-9]{64}$/),
@@ -42,17 +49,16 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-const notImplemented = (feature: string) => ({
-  statusCode: 501,
-  error: "NOT_IMPLEMENTED",
-  message: `${feature} is NOT IMPLEMENTED in the current phase.`
-});
-
 export async function registerV1Routes(app: FastifyInstance, config: AppConfig) {
   const sessionService = new SessionService(config, new InMemorySessionRepository());
   const transactionIntentService = new TransactionIntentService(
     config,
     new InMemoryTransactionIntentRepository()
+  );
+  const sellService = new SellService(
+    config,
+    new InMemorySellRepository(),
+    new UnavailableAssetDiscovery()
   );
 
   app.post("/api/v1/sessions", async (request, reply) => {
@@ -169,12 +175,49 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     }
   });
 
-  app.post("/api/v1/sell/quote", async (_request, reply) =>
-    reply.code(501).send(notImplemented("Sell quote generation"))
-  );
+  app.post("/api/v1/sell/quote", async (request, reply) => {
+    const parsed = z.object({ sessionId: z.string().uuid() }).safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send(badRequest(parsed.error));
+    }
 
-  app.post("/api/v1/sell/intents", async (_request, reply) =>
-    reply.code(501).send(notImplemented("Sell intent creation"))
-  );
+    try {
+      const session = sessionService.getActive(parsed.data.sessionId);
+      const quote = await sellService.createQuote(session);
+      return reply.code(201).send({ quote });
+    } catch (error) {
+      return reply.code(503).send({
+        error: "XRPL_ASSET_DISCOVERY_UNAVAILABLE",
+        message: error instanceof Error ? error.message : "XRPL asset discovery is unavailable"
+      });
+    }
+  });
+
+  app.post("/api/v1/sell/intents", async (request, reply) => {
+    const parsed = createSellIntentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send(badRequest(parsed.error));
+    }
+
+    try {
+      const idempotencyKey = firstHeader(request.headers["idempotency-key"]);
+      const intent = sellService.createIntent({
+        quoteId: parsed.data.quoteId,
+        ...(idempotencyKey !== undefined ? { idempotencyKey } : {})
+      });
+      return reply.code(201).send({ intent });
+    } catch (error) {
+      return reply.code(400).send(badRequest(error));
+    }
+  });
+
+  app.get<{ Params: { id: string } }>("/api/v1/sell/intents/:id/status", async (request, reply) => {
+    try {
+      const intent = sellService.getIntent(request.params.id);
+      return reply.send({ intent });
+    } catch (error) {
+      return reply.code(404).send({ error: "NOT_FOUND", message: (error as Error).message });
+    }
+  });
 }
 
