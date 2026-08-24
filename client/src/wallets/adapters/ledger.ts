@@ -20,10 +20,23 @@ export class LedgerAdapter extends BaseWalletAdapter {
 
   async isAvailable(): Promise<WalletAvailability> {
     const supportsHid = "hid" in navigator;
+    if (supportsHid) {
+      try {
+        const appPackage = "@ledgerhq/hw-app-xrp";
+        const transportPackage = "@ledgerhq/hw-transport-webhid";
+        await import(/* @vite-ignore */ appPackage);
+        await import(/* @vite-ignore */ transportPackage);
+      } catch {
+        return {
+          available: false,
+          reason: "Install Ledger XRP and WebHID transport packages before enabling Ledger."
+        };
+      }
+    }
     return supportsHid
       ? {
           available: false,
-          reason: "Browser supports WebHID, but Ledger transport dependency is not installed in this build."
+          reason: "Ledger packages are present, but XRP app signing has not been tested in this build."
         }
       : {
           available: false,

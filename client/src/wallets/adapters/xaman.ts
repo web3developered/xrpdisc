@@ -30,16 +30,25 @@ export class XamanAdapter extends BaseWalletAdapter {
         reason: "Set VITE_XAMAN_API_KEY after creating an app in the Xaman developer console."
       };
     }
+    try {
+      const packageName = "xumm";
+      await import(/* @vite-ignore */ packageName);
+    } catch {
+      return {
+        available: false,
+        reason: "Install the official xumm package before enabling Xaman in the browser bundle."
+      };
+    }
     return {
       available: false,
-      reason: "Xaman SDK dependency is not installed in this build."
+      reason: "Xaman SDK package detected, but connection is disabled until the SDK flow is tested."
     };
   }
 
   override async connect(): Promise<WalletConnection> {
     throw walletNotConfigured(
       this.id,
-      "Xaman requires the official SDK package and VITE_XAMAN_API_KEY before connection can be enabled."
+      "Xaman requires a tested official SDK connection/payload flow before connection can be enabled."
     );
   }
 }

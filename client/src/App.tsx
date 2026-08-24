@@ -1,8 +1,12 @@
 import React from "react";
-import { AlertCircle, CheckCircle2, Plug, ShieldCheck, WalletCards } from "lucide-react";
+import { AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { create } from "zustand";
+import { SellAllButton } from "./sell/SellAllButton";
+import { SellFlowController } from "./sell/SellFlowController";
+import type { SellFlowSnapshot } from "./sell/types";
 import { apiClient } from "./shared/api";
 import type { HealthResponse, WalletProviderId } from "./shared/types";
+import { WalletSelector } from "./wallets/WalletSelector";
 import { createWalletRegistry } from "./wallets/registry";
 import type { WalletAdapter, WalletAvailability, WalletConnection, WalletStatus } from "./wallets/types";
 
@@ -12,13 +16,13 @@ type AppState = {
   walletStatuses: Record<WalletProviderId, WalletStatus>;
   walletAvailability: Partial<Record<WalletProviderId, WalletAvailability>>;
   walletConnection: WalletConnection | null;
-  walletError: string | null;
-  setSelectedWallet: (wallet: WalletProviderId) => void;
+  sellFlow: SellFlowSnapshot;
+  setSelectedWallet: (wallet: WalletProviderId | null) => void;
   setApiHealth: (health: HealthResponse) => void;
   setWalletStatus: (wallet: WalletProviderId, status: WalletStatus) => void;
   setWalletAvailability: (wallet: WalletProviderId, availability: WalletAvailability) => void;
   setWalletConnection: (connection: WalletConnection | null) => void;
-  setWalletError: (error: string | null) => void;
+  setSellFlow: (snapshot: SellFlowSnapshot) => void;
 };
 
 const registry = createWalletRegistry();
@@ -28,13 +32,23 @@ const initialWalletStatuses = registry.adapters.reduce(
   {} as Record<WalletProviderId, WalletStatus>
 );
 
+const initialSellFlow: SellFlowSnapshot = {
+  state: "IDLE",
+  message: "Ready.",
+  connection: null,
+  sessionId: null,
+  quoteId: null,
+  intentId: null,
+  error: null
+};
+
 const useAppStore = create<AppState>((set) => ({
   selectedWallet: null,
   apiHealth: null,
   walletStatuses: initialWalletStatuses,
   walletAvailability: {},
   walletConnection: null,
-  walletError: null,
+  sellFlow: initialSellFlow,
   setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
   setApiHealth: (health) => set({ apiHealth: health }),
   setWalletStatus: (wallet, status) =>
@@ -44,19 +58,12 @@ const useAppStore = create<AppState>((set) => ({
       walletAvailability: { ...state.walletAvailability, [wallet]: availability }
     })),
   setWalletConnection: (connection) => set({ walletConnection: connection }),
-  setWalletError: (error) => set({ walletError: error })
+  setSellFlow: (snapshot) =>
+    set({
+      sellFlow: snapshot,
+      walletConnection: snapshot.connection
+    })
 }));
-
-function capabilitySummary(adapter: WalletAdapter): string {
-  const labels = [
-    adapter.capabilities.requiresBrowserExtension ? "extension" : null,
-    adapter.capabilities.requiresMobileApp ? "mobile" : null,
-    adapter.capabilities.requiresHardwareDevice ? "hardware" : null,
-    adapter.capabilities.requiresApiKey ? "API key" : null,
-    adapter.capabilities.requiresProjectId ? "project ID" : null
-  ].filter(Boolean);
-  return labels.length > 0 ? labels.join(" + ") : "browser wallet";
-}
 
 export function App() {
   const {
@@ -67,12 +74,15 @@ export function App() {
     walletStatuses,
     walletAvailability,
     walletConnection,
-    walletError,
+    sellFlow,
     setWalletStatus,
     setWalletAvailability,
     setWalletConnection,
-    setWalletError
+    setSellFlow
   } = useAppStore();
+
+  const controller = React.useMemo(() => new SellFlowController(setSellFlow), [setSellFlow]);
+  const walletSelectorOpen = sellFlow.state === "WALLET_SELECTOR_OPEN";
 
   React.useEffect(() => {
     apiClient
@@ -102,19 +112,23 @@ export function App() {
     });
   }, [setWalletAvailability, setWalletStatus]);
 
-  async function connectWallet(adapter: WalletAdapter) {
+  function openSellFlow() {
+    controller.openWalletSelector();
+  }
+
+  function cancelWalletSelection() {
+    setSelectedWallet(null);
+    setWalletConnection(null);
+    controller.cancel();
+  }
+
+  async function selectWallet(adapter: WalletAdapter) {
     setSelectedWallet(adapter.id);
-    setWalletError(null);
     setWalletStatus(adapter.id, "connecting");
-    try {
-      const connection = await adapter.connect();
-      setWalletConnection(connection);
-      setWalletStatus(adapter.id, "connected");
-    } catch (error) {
-      setWalletConnection(null);
-      setWalletStatus(adapter.id, "failed");
-      setWalletError(error instanceof Error ? error.message : "Wallet connection failed.");
-    }
+    await controller.connectWalletAndStartSell(adapter);
+    const latestConnection = useAppStore.getState().sellFlow.connection;
+    setWalletConnection(latestConnection);
+    setWalletStatus(adapter.id, latestConnection ? "connected" : "failed");
   }
 
   return (
@@ -124,77 +138,50 @@ export function App() {
           <ShieldCheck aria-hidden="true" />
           <span>XRPL DeFi</span>
         </div>
-        <div className="network-pill">XRPL Testnet default</div>
+        <div className="network-pill">{apiClient.defaultNetwork()} network</div>
       </section>
 
-      <section className="workspace">
-        <div className="panel intent-panel">
-          <p className="eyebrow">Phase 2 wallet boundary</p>
-          <h1>Connect an XRPL wallet before any transaction request exists</h1>
+      <section className="sell-workspace">
+        <div className="sell-panel">
+          <p className="eyebrow">Sell All Assets</p>
+          <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
           <p>
-            Wallet adapters are isolated from transaction logic. Connecting a wallet only identifies
-            the account; signing still requires a later explicit transaction review.
+            Start with the Sell All action. After wallet connection, the backend creates the session,
+            discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.
           </p>
+
+          <SellAllButton disabled={sellFlow.state === "CONNECTING_WALLET"} onClick={openSellFlow} />
+
           <div className="status-grid">
             <div>
               <span>API</span>
               <strong>{apiHealth?.status ?? "checking"}</strong>
             </div>
             <div>
-              <span>Network</span>
-              <strong>{import.meta.env.VITE_XRPL_NETWORK ?? "testnet"}</strong>
+              <span>Wallet</span>
+              <strong>{walletConnection?.address ?? selectedWallet ?? "not selected"}</strong>
             </div>
             <div>
-              <span>Wallet</span>
-              <strong>{walletConnection?.address ?? selectedWallet ?? "not connected"}</strong>
+              <span>Sell state</span>
+              <strong>{sellFlow.state}</strong>
             </div>
           </div>
-          {walletConnection ? (
-            <div className="connection-banner success">
-              <CheckCircle2 aria-hidden="true" />
-              <span>
-                Connected with {walletConnection.name} on {walletConnection.network}
-              </span>
-            </div>
-          ) : null}
-          {walletError ? (
-            <div className="connection-banner warning" role="alert">
-              <AlertCircle aria-hidden="true" />
-              <span>{walletError}</span>
-            </div>
-          ) : null}
-        </div>
 
-        <aside className="panel wallet-panel" aria-labelledby="wallet-heading">
-          <div className="panel-heading">
-            <WalletCards aria-hidden="true" />
-            <h2 id="wallet-heading">Wallet selection</h2>
+          <div className={sellFlow.error ? "connection-banner warning" : "connection-banner success"}>
+            {sellFlow.error ? <AlertCircle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
+            <span>{sellFlow.error ?? sellFlow.message}</span>
           </div>
-          <div className="wallet-list">
-            {registry.adapters.map((wallet) => (
-              <button
-                key={wallet.id}
-                type="button"
-                className={selectedWallet === wallet.id ? "wallet-option active" : "wallet-option"}
-                onClick={() => void connectWallet(wallet)}
-              >
-                <span className="wallet-option-title">
-                  <span>{wallet.name}</span>
-                  <Plug aria-hidden="true" />
-                </span>
-                <small>{capabilitySummary(wallet)}</small>
-                <em>
-                  {walletStatuses[wallet.id]}
-                  {walletAvailability[wallet.id]?.reason
-                    ? `: ${walletAvailability[wallet.id]?.reason}`
-                    : ""}
-                </em>
-              </button>
-            ))}
-          </div>
-        </aside>
+        </div>
       </section>
+
+      <WalletSelector
+        adapters={registry.adapters}
+        availability={walletAvailability}
+        open={walletSelectorOpen}
+        statuses={walletStatuses}
+        onCancel={cancelWalletSelection}
+        onSelect={(adapter) => void selectWallet(adapter)}
+      />
     </main>
   );
 }
-

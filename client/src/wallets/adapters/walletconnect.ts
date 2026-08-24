@@ -29,9 +29,18 @@ export class WalletConnectAdapter extends BaseWalletAdapter {
         reason: "Set VITE_WALLETCONNECT_PROJECT_ID before enabling WalletConnect."
       };
     }
+    try {
+      const packageName = "@walletconnect/sign-client";
+      await import(/* @vite-ignore */ packageName);
+    } catch {
+      return {
+        available: false,
+        reason: "Install @walletconnect/sign-client before enabling WalletConnect."
+      };
+    }
     return {
       available: false,
-      reason: "WalletConnect sign-client dependency is not installed in this build."
+      reason: "WalletConnect SignClient is present, but XRPL namespace support has not been verified."
     };
   }
 

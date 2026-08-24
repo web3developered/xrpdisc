@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { App } from "./App";
 
 vi.stubGlobal("fetch", vi.fn(() =>
   Promise.resolve({
@@ -11,14 +12,31 @@ vi.stubGlobal("fetch", vi.fn(() =>
   })
 ));
 
+afterEach(() => {
+  cleanup();
+});
+
 describe("client shell", () => {
-  it("renders the Phase 2 wallet-boundary language", async () => {
-    document.body.innerHTML = '<div id="root"></div>';
-    await import("./main");
+  it("renders Sell All as the primary action without showing wallets by default", async () => {
+    render(<App />);
+
     expect(await screen.findByText("XRPL DeFi")).toBeInTheDocument();
-    expect(screen.getByText(/Connecting a wallet only identifies the account/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Sell All Assets/i })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Select Wallet/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Xaman/i })).not.toBeInTheDocument();
+  });
+
+  it("opens and closes the wallet selector from the Sell All action", async () => {
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Sell All Assets/i }));
+
+    expect(screen.getByRole("dialog", { name: /Select Wallet/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Xaman/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /GemWallet/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Cancel$/i }));
+    expect(screen.queryByRole("dialog", { name: /Select Wallet/i })).not.toBeInTheDocument();
   });
 
   it("can render an empty strict mode root", () => {
