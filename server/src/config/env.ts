@@ -8,6 +8,10 @@ const envSchema = z
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
     XRPL_RPC_URL: z.string().min(1).default("wss://s.altnet.rippletest.net:51233"),
+    XRPL_CLIENT_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
     AUTHORIZED_XRP_DESTINATIONS: z
       .string()
       .default("")

@@ -40,6 +40,13 @@ export type CreatePaymentIntentInput = {
   idempotencyKey?: string;
 };
 
+export type CreatePreparedPaymentIntentInput = {
+  session: WalletSession;
+  transaction: XrplPaymentTransaction;
+  idempotencyKey?: string;
+  policyWarnings?: string[];
+};
+
 export type SignedTransactionRecord = {
   signerAddress: string;
   signedTransactionHash: string;
@@ -71,4 +78,3 @@ export type AcceptSignatureInput = {
   txBlob: string;
   unsignedTransactionFingerprint: string;
 };
-

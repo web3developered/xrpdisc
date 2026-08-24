@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config/env.js";
-import { UnavailableAssetDiscovery } from "../sell/discovery.js";
+import { UnavailableAssetDiscovery, XrplAssetDiscovery } from "../sell/discovery.js";
 import { InMemorySellRepository } from "../sell/repository.js";
 import { SellService } from "../sell/service.js";
 import { InMemorySessionRepository } from "../sessions/repository.js";
@@ -9,6 +9,7 @@ import { SessionService } from "../sessions/service.js";
 import { InMemoryTransactionIntentRepository } from "../transactions/repository.js";
 import { TransactionIntentService } from "../transactions/service.js";
 import { XamanPayloadService } from "../wallets/xaman.js";
+import { XrplJsGateway } from "../xrpl/client.js";
 import type { XrplPaymentTransaction } from "../xrpl/types.js";
 
 const walletProviderSchema = z.enum(["xaman", "crossmark", "gemwallet", "walletconnect", "ledger"]);
@@ -59,14 +60,17 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
 
 export async function registerV1Routes(app: FastifyInstance, config: AppConfig) {
   const sessionService = new SessionService(config, new InMemorySessionRepository());
+  const xrplGateway = config.XRPL_CLIENT_ENABLED ? new XrplJsGateway(config) : undefined;
   const transactionIntentService = new TransactionIntentService(
     config,
-    new InMemoryTransactionIntentRepository()
+    new InMemoryTransactionIntentRepository(),
+    xrplGateway
   );
   const sellService = new SellService(
     config,
     new InMemorySellRepository(),
-    new UnavailableAssetDiscovery()
+    xrplGateway ? new XrplAssetDiscovery(xrplGateway) : new UnavailableAssetDiscovery(),
+    transactionIntentService
   );
   const xamanPayloadService = config.XAMAN_API_KEY && config.XAMAN_API_SECRET
     ? new XamanPayloadService(config)
@@ -104,7 +108,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     try {
       const session = sessionService.getActive(parsed.data.sessionId);
       const idempotencyKey = firstHeader(request.headers["idempotency-key"]);
-      const intent = transactionIntentService.createPaymentIntent({
+      const intent = await transactionIntentService.createPaymentIntent({
         session,
         destination: parsed.data.destination,
         amountDrops: parsed.data.amountDrops,
@@ -162,12 +166,16 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
   app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/submit", async (request, reply) => {
     try {
-      const intent = transactionIntentService.submit(request.params.id);
-      return reply.code(409).send({
-        error: "XRPL_SUBMISSION_BLOCKED",
-        message: intent.submission?.failureReason,
-        intent
-      });
+      const intent = await transactionIntentService.submit(request.params.id);
+      if (intent.status === "FAILED") {
+        const blocked = intent.submission?.status === "blocked";
+        return reply.code(409).send({
+          error: blocked ? "XRPL_SUBMISSION_BLOCKED" : "XRPL_SUBMISSION_FAILED",
+          message: intent.submission?.failureReason ?? intent.submission?.engineResult,
+          intent
+        });
+      }
+      return reply.send({ intent });
     } catch (error) {
       return reply.code(400).send(badRequest(error));
     }
@@ -175,7 +183,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
   app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/monitor", async (request, reply) => {
     try {
-      const intent = transactionIntentService.monitor(request.params.id);
+      const intent = await transactionIntentService.monitor(request.params.id);
       return reply.send({
         transactionId: intent.id,
         status: intent.status,
@@ -212,8 +220,11 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
     try {
       const idempotencyKey = firstHeader(request.headers["idempotency-key"]);
-      const intent = sellService.createIntent({
+      const sessionId = sellService.getQuote(parsed.data.quoteId).sessionId;
+      const session = sessionService.getActive(sessionId);
+      const intent = await sellService.createIntent({
         quoteId: parsed.data.quoteId,
+        session,
         ...(idempotencyKey !== undefined ? { idempotencyKey } : {})
       });
       return reply.code(201).send({ intent });

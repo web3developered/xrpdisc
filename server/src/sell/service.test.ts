@@ -12,6 +12,7 @@ const config: AppConfig = {
   CORS_ORIGIN: "http://localhost:5173",
   XRPL_NETWORK: "testnet",
   XRPL_RPC_URL: "wss://s.altnet.rippletest.net:51233",
+  XRPL_CLIENT_ENABLED: false,
   AUTHORIZED_XRP_DESTINATIONS: ["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   MAX_PAYMENT_DROPS: 100_000_000,
   XRP_RESERVE_DROPS: 10_000_000,
@@ -119,8 +120,8 @@ describe("SellService", () => {
     );
 
     const quote = await service.createQuote(session);
-    const first = service.createIntent({ quoteId: quote.id, idempotencyKey: "sell-once" });
-    const second = service.createIntent({ quoteId: quote.id, idempotencyKey: "sell-once" });
+    const first = await service.createIntent({ quoteId: quote.id, session, idempotencyKey: "sell-once" });
+    const second = await service.createIntent({ quoteId: quote.id, session, idempotencyKey: "sell-once" });
 
     expect(second.id).toBe(first.id);
     expect(first.status).toBe("AWAITING_USER_SIGNATURE");
@@ -154,7 +155,7 @@ describe("SellService", () => {
     );
 
     const quote = await service.createQuote(session);
-    const intent = service.createIntent({ quoteId: quote.id });
+    const intent = await service.createIntent({ quoteId: quote.id, session });
     service.confirmAsset(intent.id, "xrp", "A".repeat(64), 12345);
     const partial = service.recordAssetFailure(intent.id, "usd", "tesSUCCESS not observed before timeout");
 
@@ -168,4 +169,3 @@ describe("SellService", () => {
     );
   });
 });
-

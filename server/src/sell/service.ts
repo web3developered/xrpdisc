@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AppConfig } from "../config/env.js";
 import type { WalletSession } from "../sessions/types.js";
+import type { TransactionIntentService } from "../transactions/service.js";
 import { generatePaymentTransaction } from "../xrpl/payment-policy.js";
 import type { XrplPaymentTransaction } from "../xrpl/types.js";
 import type { InMemorySellRepository } from "./repository.js";
@@ -14,6 +15,7 @@ import type {
 
 type CreateIntentInput = {
   quoteId: string;
+  session: WalletSession;
   idempotencyKey?: string;
 };
 
@@ -32,7 +34,8 @@ export class SellService {
   constructor(
     private readonly config: AppConfig,
     private readonly repository: InMemorySellRepository,
-    private readonly discovery: AssetDiscovery
+    private readonly discovery: AssetDiscovery,
+    private readonly transactionIntentService?: TransactionIntentService
   ) {}
 
   async createQuote(session: WalletSession): Promise<SellQuote> {
@@ -59,7 +62,15 @@ export class SellService {
     });
   }
 
-  createIntent(input: CreateIntentInput): SellIntent {
+  getQuote(id: string): SellQuote {
+    const quote = this.repository.findQuote(id);
+    if (!quote) {
+      throw new Error("Sell quote not found");
+    }
+    return quote;
+  }
+
+  async createIntent(input: CreateIntentInput): Promise<SellIntent> {
     if (input.idempotencyKey) {
       const existing = this.repository.findIntentByIdempotencyKey(input.idempotencyKey);
       if (existing) {
@@ -67,9 +78,9 @@ export class SellService {
       }
     }
 
-    const quote = this.repository.findQuote(input.quoteId);
-    if (!quote) {
-      throw new Error("Sell quote not found");
+    const quote = this.getQuote(input.quoteId);
+    if (quote.sessionId !== input.session.id) {
+      throw new Error("Sell quote does not match active wallet session");
     }
     if (Date.parse(quote.expiresAt) <= Date.now()) {
       throw new Error("Sell quote expired");
@@ -80,7 +91,9 @@ export class SellService {
       throw new Error("No eligible XRPL assets are available to sell");
     }
 
-    const transactions = eligibleAssets.map((asset) => this.planAssetTransaction(quote, asset));
+    const transactions = await Promise.all(
+      eligibleAssets.map((asset) => this.planAssetTransaction(quote, input.session, asset))
+    );
     const now = new Date().toISOString();
     return this.repository.saveIntent(
       {
@@ -181,7 +194,11 @@ export class SellService {
     return asset;
   }
 
-  private planAssetTransaction(quote: SellQuote, asset: DiscoveredSellAsset): SellTransactionPlan {
+  private async planAssetTransaction(
+    quote: SellQuote,
+    session: WalletSession,
+    asset: DiscoveredSellAsset
+  ): Promise<SellTransactionPlan> {
     let unsignedTransaction: XrplPaymentTransaction;
     if (asset.kind === "XRP") {
       unsignedTransaction = generatePaymentTransaction(this.config, {
@@ -208,10 +225,24 @@ export class SellService {
       throw new Error("Generated sell transaction destination does not match company destination");
     }
 
+    const transactionIntent = this.transactionIntentService
+      ? await this.transactionIntentService.createPreparedPaymentIntent({
+          session,
+          transaction: unsignedTransaction,
+          idempotencyKey: `${quote.id}:${asset.id}`
+        })
+      : null;
+
     return {
       assetId: asset.id,
       status: "PREPARED",
-      unsignedTransaction
+      unsignedTransaction: transactionIntent?.unsignedTransaction ?? unsignedTransaction,
+      ...(transactionIntent
+        ? {
+            transactionIntentId: transactionIntent.id,
+            transactionIntentFingerprint: transactionIntent.intentFingerprint
+          }
+        : {})
     };
   }
 
@@ -234,4 +265,3 @@ export class SellService {
     return transactions.some((transaction) => transaction.status === "CONFIRMED");
   }
 }
-

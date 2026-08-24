@@ -12,16 +12,22 @@ export type XrplPaymentTransaction = {
         value: string;
       };
   DestinationTag?: number;
+  Fee?: string;
+  Flags?: number;
+  LastLedgerSequence?: number;
   Memos?: Array<{
     Memo: {
       MemoType?: string;
       MemoData?: string;
     };
   }>;
+  Sequence?: number;
+  SigningPubKey?: string;
+  TxnSignature?: string;
 };
 
 export type GeneratedPayment = {
   transaction: XrplPaymentTransaction;
-  autofillStatus: "requires_xrpl_client";
+  autofillStatus: "requires_xrpl_client" | "autofilled";
   policyWarnings: string[];
 };
