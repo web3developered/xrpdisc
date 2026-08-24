@@ -3,6 +3,7 @@ import { GemWalletAdapter } from "./adapters/gemwallet";
 import { LedgerAdapter } from "./adapters/ledger";
 import { WalletConnectAdapter } from "./adapters/walletconnect";
 import { XamanAdapter } from "./adapters/xaman";
+import { readPublicConfig } from "../shared/runtime-config";
 import type { WalletAdapter, WalletId } from "./types";
 
 export type WalletRegistry = {
@@ -12,10 +13,10 @@ export type WalletRegistry = {
 
 export function createWalletRegistry(): WalletRegistry {
   const adapters: WalletAdapter[] = [
-    new XamanAdapter(import.meta.env.VITE_XAMAN_API_KEY),
+    new XamanAdapter(readPublicConfig("VITE_XAMAN_API_KEY")),
     new CrossmarkAdapter(),
     new GemWalletAdapter(),
-    new WalletConnectAdapter(import.meta.env.VITE_WALLETCONNECT_PROJECT_ID),
+    new WalletConnectAdapter(readPublicConfig("VITE_WALLETCONNECT_PROJECT_ID")),
     new LedgerAdapter()
   ];
 

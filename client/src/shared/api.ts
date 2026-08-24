@@ -3,6 +3,7 @@ import type { WalletProviderId } from "./types";
 import type { SellIntentResponse, SellQuoteResponse } from "../sell/types";
 import type { SignedXrplTransaction, UnsignedXrplTransaction } from "../wallets/types";
 import type { HealthResponse } from "./types";
+import { readPublicConfig, readXrplNetwork } from "./runtime-config";
 
 const healthResponseSchema = z.object({
   status: z.enum(["ok", "degraded", "unavailable"]),
@@ -107,7 +108,7 @@ const xamanPayloadStatusSchema = z.object({
   })
 });
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const apiBaseUrl = readPublicConfig("VITE_API_BASE_URL") ?? "http://localhost:8080";
 
 async function request<T>(
   path: string,
@@ -133,7 +134,7 @@ async function request<T>(
 
 export const apiClient = {
   defaultNetwork: (): "testnet" | "mainnet" =>
-    import.meta.env.VITE_XRPL_NETWORK === "mainnet" ? "mainnet" : "testnet",
+    readXrplNetwork(),
   health: (): Promise<HealthResponse> => request("/health", healthResponseSchema),
   createSession: (input: {
     walletAddress: string;

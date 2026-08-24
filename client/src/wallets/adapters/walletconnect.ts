@@ -1,4 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
+import { readXrplNetwork } from "../../shared/runtime-config";
 import { WalletError, walletUnavailable } from "../errors";
 import type {
   SignedXrplTransaction,
@@ -61,8 +62,7 @@ export class WalletConnectAdapter extends BaseWalletAdapter {
       throw walletUnavailable(this.id, "WalletConnect/Reown project ID is not configured.");
     }
 
-    const defaultNetwork = import.meta.env.VITE_XRPL_NETWORK === "mainnet" ? "mainnet" : "testnet";
-    const chainId = chainForNetwork(defaultNetwork);
+    const chainId = chainForNetwork(readXrplNetwork());
     const client = await SignClient.init({
       projectId: this.projectId,
       metadata: {
