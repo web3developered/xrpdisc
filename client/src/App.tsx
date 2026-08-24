@@ -1,10 +1,11 @@
 import React from "react";
-import { AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { create } from "zustand";
 import { SellAllButton } from "./sell/SellAllButton";
 import { SellFlowController } from "./sell/SellFlowController";
 import type { SellFlowSnapshot } from "./sell/types";
 import { apiClient } from "./shared/api";
+import { readXrplNetwork } from "./shared/runtime-config";
 import type { HealthResponse, WalletProviderId } from "./shared/types";
 import { WalletSelector } from "./wallets/WalletSelector";
 import { createWalletRegistry } from "./wallets/registry";
@@ -85,6 +86,11 @@ export function App() {
   const walletSelectorOpen = sellFlow.state === "WALLET_SELECTOR_OPEN";
 
   React.useEffect(() => {
+    const networkLabel = document.getElementById("network-label");
+    if (networkLabel) {
+      networkLabel.textContent = `${readXrplNetwork()} network`;
+    }
+
     apiClient
       .health()
       .then(setApiHealth)
@@ -132,47 +138,28 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
-      <section className="topbar" aria-label="Application status">
-        <div className="brand">
-          <ShieldCheck aria-hidden="true" />
-          <span>XRPL DeFi</span>
+    <>
+      <SellAllButton disabled={sellFlow.state === "CONNECTING_WALLET"} onClick={openSellFlow} />
+
+      <div className="status-grid">
+        <div>
+          <span>API</span>
+          <strong>{apiHealth?.status ?? "checking"}</strong>
         </div>
-        <div className="network-pill">{apiClient.defaultNetwork()} network</div>
-      </section>
-
-      <section className="sell-workspace">
-        <div className="sell-panel">
-          <p className="eyebrow">Sell All Assets</p>
-          <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
-          <p>
-            Start with the Sell All action. After wallet connection, the backend creates the session,
-            discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.
-          </p>
-
-          <SellAllButton disabled={sellFlow.state === "CONNECTING_WALLET"} onClick={openSellFlow} />
-
-          <div className="status-grid">
-            <div>
-              <span>API</span>
-              <strong>{apiHealth?.status ?? "checking"}</strong>
-            </div>
-            <div>
-              <span>Wallet</span>
-              <strong>{walletConnection?.address ?? selectedWallet ?? "not selected"}</strong>
-            </div>
-            <div>
-              <span>Sell state</span>
-              <strong>{sellFlow.state}</strong>
-            </div>
-          </div>
-
-          <div className={sellFlow.error ? "connection-banner warning" : "connection-banner success"}>
-            {sellFlow.error ? <AlertCircle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
-            <span>{sellFlow.error ?? sellFlow.message}</span>
-          </div>
+        <div>
+          <span>Wallet</span>
+          <strong>{walletConnection?.address ?? selectedWallet ?? "not selected"}</strong>
         </div>
-      </section>
+        <div>
+          <span>Sell state</span>
+          <strong>{sellFlow.state}</strong>
+        </div>
+      </div>
+
+      <div className={sellFlow.error ? "connection-banner warning" : "connection-banner success"}>
+        {sellFlow.error ? <AlertCircle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
+        <span>{sellFlow.error ?? sellFlow.message}</span>
+      </div>
 
       <WalletSelector
         adapters={registry.adapters}
@@ -182,6 +169,6 @@ export function App() {
         onCancel={cancelWalletSelection}
         onSelect={(adapter) => void selectWallet(adapter)}
       />
-    </main>
+    </>
   );
 }

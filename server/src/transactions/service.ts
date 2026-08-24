@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AppConfig } from "../config/env.js";
+import type { ObservabilityEvent } from "../observability/events.js";
 import { generatePaymentTransaction } from "../xrpl/payment-policy.js";
 import type { XrplGateway } from "../xrpl/client.js";
 import { createIntentFingerprint } from "./fingerprint.js";
@@ -18,7 +19,8 @@ export class TransactionIntentService {
   constructor(
     private readonly config: AppConfig,
     private readonly repository: InMemoryTransactionIntentRepository,
-    private readonly xrpl?: XrplGateway
+    private readonly xrpl?: XrplGateway,
+    private readonly notify: (event: ObservabilityEvent) => Promise<void> = async () => undefined
   ) {}
 
   async createPaymentIntent(input: CreatePaymentIntentInput): Promise<TransactionIntent> {
@@ -51,7 +53,7 @@ export class TransactionIntentService {
     }
 
     const now = new Date().toISOString();
-    return this.repository.save({
+    const intent = this.repository.save({
       id: randomUUID(),
       sessionId: input.session.id,
       network: input.session.network,
@@ -64,6 +66,20 @@ export class TransactionIntentService {
       createdAt: now,
       updatedAt: now
     });
+    await this.notify({
+      name: "transaction.intent.created",
+      sessionId: intent.sessionId,
+      transactionIntentId: intent.id,
+      network: intent.network,
+      walletAddress: intent.unsignedTransaction.Account,
+      status: intent.status,
+      data: {
+        transactionType: intent.transactionType,
+        autofillStatus: intent.autofillStatus,
+        destination: intent.unsignedTransaction.Destination
+      }
+    });
+    return intent;
   }
 
   async createPreparedPaymentIntent(input: CreatePreparedPaymentIntentInput): Promise<TransactionIntent> {
@@ -90,7 +106,7 @@ export class TransactionIntentService {
     }
 
     const now = new Date().toISOString();
-    return this.repository.save({
+    const intent = this.repository.save({
       id: randomUUID(),
       sessionId: input.session.id,
       network: input.session.network,
@@ -103,6 +119,20 @@ export class TransactionIntentService {
       createdAt: now,
       updatedAt: now
     });
+    await this.notify({
+      name: "transaction.intent.created",
+      sessionId: intent.sessionId,
+      transactionIntentId: intent.id,
+      network: intent.network,
+      walletAddress: intent.unsignedTransaction.Account,
+      status: intent.status,
+      data: {
+        transactionType: intent.transactionType,
+        autofillStatus,
+        destination: intent.unsignedTransaction.Destination
+      }
+    });
+    return intent;
   }
 
   getIntent(id: string): TransactionIntent {
@@ -160,9 +190,36 @@ export class TransactionIntentService {
       };
 
       if (!result.accepted) {
+        await this.notify({
+          name: "transaction.submission.failed",
+        sessionId: submitting.sessionId,
+        transactionIntentId: submitting.id,
+        network: submitting.network,
+        walletAddress: submitting.unsignedTransaction.Account,
+        status: result.engineResult,
+        ...(result.hash ? { xrplHash: result.hash } : {}),
+        data: {
+          ...(result.ledgerIndex !== undefined ? { ledgerIndex: result.ledgerIndex } : {})
+        }
+      });
         return this.transition(submitting, "FAILED", { submission });
       }
-      return this.transition(submitting, "SUBMITTED", { submission });
+      const submitted = this.transition(submitting, "SUBMITTED", { submission });
+      await this.notify({
+        name: "transaction.submitted",
+        sessionId: submitted.sessionId,
+        transactionIntentId: submitted.id,
+        network: submitted.network,
+        walletAddress: submitted.unsignedTransaction.Account,
+        status: result.engineResult,
+        ...(result.hash ? { xrplHash: result.hash } : {}),
+        data: {
+          ...(result.ledgerIndex !== undefined ? { ledgerIndex: result.ledgerIndex } : {}),
+          accepted: result.accepted,
+          applied: result.applied
+        }
+      });
+      return submitted;
     }
 
     const failureReason =
@@ -177,8 +234,7 @@ export class TransactionIntentService {
     const submitting = this.transition(intent, "SUBMITTING", {
       submission
     });
-
-    return this.transition(submitting, "FAILED", {
+    const failed = this.transition(submitting, "FAILED", {
       submission,
       monitoring: {
         status: "terminal",
@@ -187,6 +243,16 @@ export class TransactionIntentService {
         reason: failureReason
       }
     });
+    await this.notify({
+      name: "transaction.submission.blocked",
+      sessionId: failed.sessionId,
+      transactionIntentId: failed.id,
+      network: failed.network,
+      walletAddress: failed.unsignedTransaction.Account,
+      status: failed.status,
+      message: failureReason
+    });
+    return failed;
   }
 
   async monitor(intentId: string): Promise<TransactionIntent> {
@@ -210,7 +276,7 @@ export class TransactionIntentService {
       const validating = intent.status === "SUBMITTED" ? this.transition(intent, "VALIDATING") : intent;
       const validation = await this.xrpl.lookupTransaction(intent.submission.xrplHash);
       if (validation.validated) {
-        return this.transition(validating, "VALIDATED", {
+        const validated = this.transition(validating, "VALIDATED", {
           submission: {
             ...validating.submission!,
             ...(validation.ledgerIndex ? { ledgerIndex: validation.ledgerIndex } : {}),
@@ -223,6 +289,17 @@ export class TransactionIntentService {
             reason: "XRPL transaction validated"
           }
         });
+        await this.notify({
+          name: "transaction.confirmed",
+          sessionId: validated.sessionId,
+          transactionIntentId: validated.id,
+          network: validated.network,
+          walletAddress: validated.unsignedTransaction.Account,
+          xrplHash: validation.hash,
+          status: validated.status,
+          data: { ledgerIndex: validation.ledgerIndex, engineResult: validation.engineResult }
+        });
+        return validated;
       }
     }
 

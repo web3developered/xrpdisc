@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config/env.js";
+import { createObservabilitySink, type ObservabilityEvent, type ObservabilitySink } from "../observability/events.js";
 import { UnavailableAssetDiscovery, XrplAssetDiscovery } from "../sell/discovery.js";
 import { InMemorySellRepository } from "../sell/repository.js";
 import { SellService } from "../sell/service.js";
@@ -58,19 +59,30 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+async function notify(app: FastifyInstance, sink: ObservabilitySink, event: ObservabilityEvent): Promise<void> {
+  try {
+    await sink.record(event);
+  } catch (error) {
+    app.log.warn({ error, eventName: event.name }, "observability notification failed");
+  }
+}
+
 export async function registerV1Routes(app: FastifyInstance, config: AppConfig) {
   const sessionService = new SessionService(config, new InMemorySessionRepository());
+  const observability = createObservabilitySink(config);
   const xrplGateway = config.XRPL_CLIENT_ENABLED ? new XrplJsGateway(config) : undefined;
   const transactionIntentService = new TransactionIntentService(
     config,
     new InMemoryTransactionIntentRepository(),
-    xrplGateway
+    xrplGateway,
+    (event) => notify(app, observability, event)
   );
   const sellService = new SellService(
     config,
     new InMemorySellRepository(),
     xrplGateway ? new XrplAssetDiscovery(xrplGateway) : new UnavailableAssetDiscovery(),
-    transactionIntentService
+    transactionIntentService,
+    (event) => notify(app, observability, event)
   );
   const xamanPayloadService = config.XAMAN_API_KEY && config.XAMAN_API_SECRET
     ? new XamanPayloadService(config)
@@ -84,6 +96,15 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
     try {
       const session = sessionService.create(parsed.data);
+      await notify(app, observability, {
+        name: "wallet.connected",
+        flowId: session.id,
+        sessionId: session.id,
+        walletAddress: session.walletAddress,
+        walletProvider: session.walletProvider,
+        network: session.network,
+        status: session.status
+      });
       return reply.code(201).send({ session });
     } catch (error) {
       return reply.code(400).send(badRequest(error));
@@ -158,6 +179,19 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
         txBlob: parsed.data.txBlob,
         unsignedTransactionFingerprint: parsed.data.unsignedTransactionFingerprint
       });
+      await notify(app, observability, {
+        name: "transaction.signature.received",
+        transactionIntentId: intent.id,
+        sessionId: intent.sessionId,
+        network: intent.network,
+        status: intent.status,
+        ...(intent.signedTransaction?.signerAddress
+          ? { walletAddress: intent.signedTransaction.signerAddress }
+          : {}),
+        ...(intent.signedTransaction?.signedTransactionHash
+          ? { xrplHash: intent.signedTransaction.signedTransactionHash }
+          : {})
+      });
       return reply.send({ intent });
     } catch (error) {
       return reply.code(400).send(badRequest(error));
@@ -167,6 +201,19 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
   app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/submit", async (request, reply) => {
     try {
       const intent = await transactionIntentService.submit(request.params.id);
+      await notify(app, observability, {
+        name: "transaction.submission.response",
+        sessionId: intent.sessionId,
+        transactionIntentId: intent.id,
+        network: intent.network,
+        walletAddress: intent.unsignedTransaction.Account,
+        status: intent.status,
+        ...(intent.submission?.xrplHash ? { xrplHash: intent.submission.xrplHash } : {}),
+        data: {
+          engineResult: intent.submission?.engineResult,
+          submissionStatus: intent.submission?.status
+        }
+      });
       if (intent.status === "FAILED") {
         const blocked = intent.submission?.status === "blocked";
         return reply.code(409).send({
@@ -184,6 +231,12 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
   app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/monitor", async (request, reply) => {
     try {
       const intent = await transactionIntentService.monitor(request.params.id);
+      await notify(app, observability, {
+        name: "transaction.monitoring",
+        transactionIntentId: intent.id,
+        status: intent.status,
+        data: { monitoring: intent.monitoring }
+      });
       return reply.send({
         transactionId: intent.id,
         status: intent.status,
@@ -205,6 +258,12 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       const quote = await sellService.createQuote(session);
       return reply.code(201).send({ quote });
     } catch (error) {
+      await notify(app, observability, {
+        name: "sell.asset_discovery.failed",
+        sessionId: parsed.data.sessionId,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "XRPL asset discovery failed"
+      });
       return reply.code(503).send({
         error: "XRPL_ASSET_DISCOVERY_UNAVAILABLE",
         message: error instanceof Error ? error.message : "XRPL asset discovery is unavailable"
@@ -226,6 +285,20 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
         quoteId: parsed.data.quoteId,
         session,
         ...(idempotencyKey !== undefined ? { idempotencyKey } : {})
+      });
+      await notify(app, observability, {
+        name: "sell.intent.created",
+        flowId: intent.id,
+        sessionId: intent.sessionId,
+        sellIntentId: intent.id,
+        walletAddress: intent.walletAddress,
+        network: intent.network,
+        quoteId: intent.quoteId,
+        status: intent.status,
+        data: {
+          transactionCount: intent.transactions.length,
+          eligibleAssets: intent.transactions.map((transaction) => transaction.assetId).join(",")
+        }
       });
       return reply.code(201).send({ intent });
     } catch (error) {

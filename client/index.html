@@ -6,7 +6,28 @@
     <title>XRPL DeFi Platform</title>
   </head>
   <body>
-    <div id="root"></div>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Application status">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">✓</span>
+          <span>XRPL DeFi</span>
+        </div>
+        <div class="network-pill" id="network-label">testnet network</div>
+      </section>
+
+      <section class="sell-workspace">
+        <div class="sell-panel">
+          <p class="eyebrow">Sell All Assets</p>
+          <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
+          <p>
+            Start with the Sell All action. After wallet connection, the backend creates the session,
+            discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.
+          </p>
+
+          <div id="sell-flow-root"></div>
+        </div>
+      </section>
+    </main>
     <script src="/config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

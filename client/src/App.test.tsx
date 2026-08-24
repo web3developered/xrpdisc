@@ -20,8 +20,7 @@ describe("client shell", () => {
   it("renders Sell All as the primary action without showing wallets by default", async () => {
     render(<App />);
 
-    expect(await screen.findByText("XRPL DeFi")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Sell All Assets/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Sell All Assets/i })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: /Select Wallet/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Xaman/i })).not.toBeInTheDocument();
   });

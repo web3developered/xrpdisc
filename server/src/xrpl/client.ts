@@ -55,12 +55,23 @@ export class XrplJsGateway implements XrplGateway {
 
   async getAccountSnapshot(address: string): Promise<XrplAccountSnapshot> {
     await this.ensureConnected();
-    const accountInfo = await this.client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "validated",
-      strict: true
-    }) as AccountInfoResponse;
+    let accountInfo: AccountInfoResponse;
+    try {
+      accountInfo = await this.client.request({
+        command: "account_info",
+        account: address,
+        ledger_index: "validated",
+        strict: true
+      }) as AccountInfoResponse;
+    } catch (error) {
+      if (isXrplAccountNotFound(error)) {
+        return {
+          balanceDrops: "0",
+          trustlines: []
+        };
+      }
+      throw error;
+    }
     const accountLines = await this.client.request({
       command: "account_lines",
       account: address,
@@ -122,4 +133,12 @@ export class XrplJsGateway implements XrplGateway {
     await this.connecting;
     this.connecting = null;
   }
+}
+
+function isXrplAccountNotFound(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return message.includes("actnotfound") || message.includes("account not found");
 }

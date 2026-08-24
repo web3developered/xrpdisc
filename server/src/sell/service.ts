@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AppConfig } from "../config/env.js";
+import type { ObservabilityEvent } from "../observability/events.js";
 import type { WalletSession } from "../sessions/types.js";
 import type { TransactionIntentService } from "../transactions/service.js";
 import { generatePaymentTransaction } from "../xrpl/payment-policy.js";
@@ -19,6 +20,8 @@ type CreateIntentInput = {
   idempotencyKey?: string;
 };
 
+type Notify = (event: ObservabilityEvent) => Promise<void>;
+
 function parseDrops(value: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new Error("XRP balance must be a drops integer string");
@@ -35,7 +38,8 @@ export class SellService {
     private readonly config: AppConfig,
     private readonly repository: InMemorySellRepository,
     private readonly discovery: AssetDiscovery,
-    private readonly transactionIntentService?: TransactionIntentService
+    private readonly transactionIntentService?: TransactionIntentService,
+    private readonly notify: Notify = async () => undefined
   ) {}
 
   async createQuote(session: WalletSession): Promise<SellQuote> {
@@ -44,10 +48,43 @@ export class SellService {
       throw new Error("No company-controlled XRP destination is configured");
     }
 
+    await this.notify({
+      name: "sell.begin",
+      flowId: session.id,
+      sessionId: session.id,
+      walletAddress: session.walletAddress,
+      walletProvider: session.walletProvider,
+      network: session.network,
+      status: "STARTED"
+    });
+    await this.notify({
+      name: "sell.asset_discovery.started",
+      flowId: session.id,
+      sessionId: session.id,
+      walletAddress: session.walletAddress,
+      walletProvider: session.walletProvider,
+      network: session.network
+    });
     const discovered = await this.discovery.discover(session);
     const assets = discovered.map((asset) => this.applyEligibilityPolicy(asset));
     const now = new Date();
-    return this.repository.saveQuote({
+    await this.notify({
+      name: "sell.asset_discovery.completed",
+      flowId: session.id,
+      sessionId: session.id,
+      walletAddress: session.walletAddress,
+      walletProvider: session.walletProvider,
+      network: session.network,
+      status: "COMPLETED",
+      data: {
+        totalAssets: assets.length,
+        eligibleAssets: assets.filter((asset) => asset.eligible).length,
+        summary: assets
+          .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:${asset.eligible ? "eligible" : "ineligible"}`)
+          .join(";")
+      }
+    });
+    const quote = this.repository.saveQuote({
       id: randomUUID(),
       sessionId: session.id,
       walletAddress: session.walletAddress,
@@ -60,6 +97,21 @@ export class SellService {
         "Fiat/cash settlement is out of scope. Confirmed records are handed to existing settlement infrastructure."
       ]
     });
+    await this.notify({
+      name: "sell.quote.created",
+      flowId: quote.id,
+      sessionId: quote.sessionId,
+      quoteId: quote.id,
+      walletAddress: quote.walletAddress,
+      network: quote.network,
+      status: "CREATED",
+      data: {
+        destination: quote.destination,
+        expiresAt: quote.expiresAt,
+        assetCount: quote.assets.length
+      }
+    });
+    return quote;
   }
 
   getQuote(id: string): SellQuote {
@@ -95,7 +147,7 @@ export class SellService {
       eligibleAssets.map((asset) => this.planAssetTransaction(quote, input.session, asset))
     );
     const now = new Date().toISOString();
-    return this.repository.saveIntent(
+    const intent = this.repository.saveIntent(
       {
         id: randomUUID(),
         quoteId: quote.id,
@@ -112,6 +164,20 @@ export class SellService {
       },
       input.idempotencyKey
     );
+    await this.notify({
+      name: "sell.wallet_signing.requested",
+      flowId: intent.id,
+      sessionId: intent.sessionId,
+      quoteId: intent.quoteId,
+      sellIntentId: intent.id,
+      walletAddress: intent.walletAddress,
+      network: intent.network,
+      status: intent.status,
+      data: {
+        transactionCount: intent.transactions.length
+      }
+    });
+    return intent;
   }
 
   getIntent(id: string): SellIntent {
@@ -134,13 +200,38 @@ export class SellService {
           }
         : transaction
     );
-    return this.repository.updateIntent({
+    const updated = this.repository.updateIntent({
       ...intent,
       transactions,
       status: this.aggregateStatus(transactions),
       settlementEventReady: this.hasSettlementReadyRecord(transactions),
       updatedAt: new Date().toISOString()
     });
+    void this.notify({
+      name: "sell.asset.confirmed",
+      flowId: updated.id,
+      sessionId: updated.sessionId,
+      quoteId: updated.quoteId,
+      sellIntentId: updated.id,
+      assetId,
+      walletAddress: updated.walletAddress,
+      network: updated.network,
+      xrplHash: signedTransactionHash,
+      status: updated.status,
+      data: { ledgerIndex }
+    });
+    void this.notify({
+      name: "settlement.handoff.ready",
+      flowId: updated.id,
+      sessionId: updated.sessionId,
+      quoteId: updated.quoteId,
+      sellIntentId: updated.id,
+      walletAddress: updated.walletAddress,
+      network: updated.network,
+      xrplHash: signedTransactionHash,
+      status: updated.status
+    });
+    return updated;
   }
 
   recordAssetFailure(intentId: string, assetId: string, failureReason: string): SellIntent {
@@ -154,13 +245,26 @@ export class SellService {
           }
         : transaction
     );
-    return this.repository.updateIntent({
+    const updated = this.repository.updateIntent({
       ...intent,
       transactions,
       status: this.aggregateStatus(transactions),
       settlementEventReady: this.hasSettlementReadyRecord(transactions),
       updatedAt: new Date().toISOString()
     });
+    void this.notify({
+      name: "sell.asset.failed",
+      flowId: updated.id,
+      sessionId: updated.sessionId,
+      quoteId: updated.quoteId,
+      sellIntentId: updated.id,
+      assetId,
+      walletAddress: updated.walletAddress,
+      network: updated.network,
+      status: updated.status,
+      message: failureReason
+    });
+    return updated;
   }
 
   private applyEligibilityPolicy(asset: DiscoveredSellAsset): DiscoveredSellAsset {
@@ -232,6 +336,24 @@ export class SellService {
           idempotencyKey: `${quote.id}:${asset.id}`
         })
       : null;
+    await this.notify({
+      name: "sell.transaction.generated",
+      flowId: quote.id,
+      sessionId: quote.sessionId,
+      quoteId: quote.id,
+      assetId: asset.id,
+      walletAddress: quote.walletAddress,
+      network: quote.network,
+      status: "PREPARED",
+      ...(transactionIntent?.id ? { transactionIntentId: transactionIntent.id } : {}),
+      data: {
+        transactionType: unsignedTransaction.TransactionType,
+        destination: unsignedTransaction.Destination,
+        amount: typeof unsignedTransaction.Amount === "string"
+          ? unsignedTransaction.Amount
+          : `${unsignedTransaction.Amount.value} ${unsignedTransaction.Amount.currency}.${unsignedTransaction.Amount.issuer}`
+      }
+    });
 
     return {
       assetId: asset.id,

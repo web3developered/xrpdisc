@@ -37,6 +37,8 @@ const envSchema = z
     REDIS_URL: z.string().min(1).optional(),
     XAMAN_API_KEY: z.string().min(1).optional(),
     XAMAN_API_SECRET: z.string().min(1).optional(),
+    TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+    TELEGRAM_CHAT_ID: z.string().min(1).optional(),
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(1800),
     REQUIRE_EXPLICIT_MAINNET_ENABLE: z
       .enum(["true", "false"])
