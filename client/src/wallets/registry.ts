@@ -5,26 +5,16 @@ import { WalletConnectAdapter } from "./adapters/walletconnect";
 import { XamanAdapter } from "./adapters/xaman";
 import type { WalletAdapter, WalletId } from "./types";
 
-type WalletGlobals = typeof globalThis & {
-  crossmark?: ConstructorParameters<typeof CrossmarkAdapter>[0] extends () => infer T ? T : never;
-  gemWallet?: ConstructorParameters<typeof GemWalletAdapter>[0] extends () => infer T ? T : never;
-};
-
 export type WalletRegistry = {
   adapters: WalletAdapter[];
   get(walletId: WalletId): WalletAdapter;
 };
 
-function readWalletGlobals(): WalletGlobals {
-  return globalThis as WalletGlobals;
-}
-
 export function createWalletRegistry(): WalletRegistry {
-  const globals = readWalletGlobals();
   const adapters: WalletAdapter[] = [
     new XamanAdapter(import.meta.env.VITE_XAMAN_API_KEY),
-    new CrossmarkAdapter(() => globals.crossmark),
-    new GemWalletAdapter(() => globals.gemWallet),
+    new CrossmarkAdapter(),
+    new GemWalletAdapter(),
     new WalletConnectAdapter(import.meta.env.VITE_WALLETCONNECT_PROJECT_ID),
     new LedgerAdapter()
   ];

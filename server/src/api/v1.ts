@@ -8,6 +8,8 @@ import { InMemorySessionRepository } from "../sessions/repository.js";
 import { SessionService } from "../sessions/service.js";
 import { InMemoryTransactionIntentRepository } from "../transactions/repository.js";
 import { TransactionIntentService } from "../transactions/service.js";
+import { XamanPayloadService } from "../wallets/xaman.js";
+import type { XrplPaymentTransaction } from "../xrpl/types.js";
 
 const walletProviderSchema = z.enum(["xaman", "crossmark", "gemwallet", "walletconnect", "ledger"]);
 const networkSchema = z.enum(["testnet", "mainnet"]);
@@ -29,6 +31,12 @@ const createPaymentIntentSchema = z.object({
 
 const createSellIntentSchema = z.object({
   quoteId: z.string().uuid()
+});
+
+const xamanTransactionPayloadSchema = z.object({
+  transaction: z
+    .record(z.string(), z.unknown())
+    .and(z.object({ TransactionType: z.string().min(1) }))
 });
 
 const acceptSignatureSchema = z.object({
@@ -60,6 +68,9 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     new InMemorySellRepository(),
     new UnavailableAssetDiscovery()
   );
+  const xamanPayloadService = config.XAMAN_API_KEY && config.XAMAN_API_SECRET
+    ? new XamanPayloadService(config)
+    : null;
 
   app.post("/api/v1/sessions", async (request, reply) => {
     const parsed = createSessionSchema.safeParse(request.body);
@@ -217,6 +228,68 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       return reply.send({ intent });
     } catch (error) {
       return reply.code(404).send({ error: "NOT_FOUND", message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/v1/wallets/xaman/payloads/sign-in", async (_request, reply) => {
+    if (!xamanPayloadService) {
+      return reply.code(503).send({
+        error: "XAMAN_NOT_CONFIGURED",
+        message: "Xaman API key and secret are not configured on the backend."
+      });
+    }
+
+    try {
+      const payload = await xamanPayloadService.createSignInPayload();
+      return reply.code(201).send({ payload });
+    } catch (error) {
+      return reply.code(502).send({
+        error: "XAMAN_PAYLOAD_CREATE_FAILED",
+        message: error instanceof Error ? error.message : "Xaman payload creation failed"
+      });
+    }
+  });
+
+  app.post("/api/v1/wallets/xaman/payloads/sign-transaction", async (request, reply) => {
+    if (!xamanPayloadService) {
+      return reply.code(503).send({
+        error: "XAMAN_NOT_CONFIGURED",
+        message: "Xaman API key and secret are not configured on the backend."
+      });
+    }
+
+    const parsed = xamanTransactionPayloadSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send(badRequest(parsed.error));
+    }
+
+    try {
+      const payload = await xamanPayloadService.createTransactionPayload(parsed.data.transaction as XrplPaymentTransaction);
+      return reply.code(201).send({ payload });
+    } catch (error) {
+      return reply.code(502).send({
+        error: "XAMAN_PAYLOAD_CREATE_FAILED",
+        message: error instanceof Error ? error.message : "Xaman payload creation failed"
+      });
+    }
+  });
+
+  app.get<{ Params: { uuid: string } }>("/api/v1/wallets/xaman/payloads/:uuid", async (request, reply) => {
+    if (!xamanPayloadService) {
+      return reply.code(503).send({
+        error: "XAMAN_NOT_CONFIGURED",
+        message: "Xaman API key and secret are not configured on the backend."
+      });
+    }
+
+    try {
+      const payload = await xamanPayloadService.getPayloadStatus(request.params.uuid);
+      return reply.send({ payload });
+    } catch (error) {
+      return reply.code(502).send({
+        error: "XAMAN_PAYLOAD_STATUS_FAILED",
+        message: error instanceof Error ? error.message : "Xaman payload status lookup failed"
+      });
     }
   });
 }

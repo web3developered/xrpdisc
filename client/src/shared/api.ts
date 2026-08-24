@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { WalletProviderId } from "./types";
 import type { SellIntentResponse, SellQuoteResponse } from "../sell/types";
+import type { SignedXrplTransaction, UnsignedXrplTransaction } from "../wallets/types";
 import type { HealthResponse } from "./types";
 
 const healthResponseSchema = z.object({
@@ -50,10 +51,59 @@ const sellIntentResponseSchema = z.object({
       z.object({
         assetId: z.string(),
         status: z.string(),
-        unsignedTransaction: z.record(z.string(), z.unknown())
+        unsignedTransaction: z.record(z.string(), z.unknown()),
+        transactionIntentId: z.string().optional(),
+        transactionIntentFingerprint: z.string().optional()
       })
     ),
     settlementEventReady: z.boolean()
+  })
+});
+
+const transactionStatusResponseSchema = z.object({
+  transactionId: z.string(),
+  status: z.string(),
+  network: z.string(),
+  transactionType: z.string(),
+  autofillStatus: z.string(),
+  policyWarnings: z.array(z.string()),
+  signedTransactionHash: z.string().optional(),
+  submission: z.unknown().optional(),
+  monitoring: z.unknown().optional(),
+  updatedAt: z.string()
+});
+
+const transactionIntentEnvelopeSchema = z.object({
+  intent: z.unknown()
+});
+
+const xamanPayloadResponseSchema = z.object({
+  payload: z.object({
+    uuid: z.string(),
+    next: z.object({
+      always: z.string().url(),
+      no_push_msg_received: z.string().url().optional()
+    }),
+    refs: z.object({
+      qr_png: z.string().url(),
+      qr_matrix: z.string(),
+      websocket_status: z.string().url()
+    }),
+    pushed: z.boolean()
+  })
+});
+
+const xamanPayloadStatusSchema = z.object({
+  payload: z.object({
+    uuid: z.string(),
+    resolved: z.boolean(),
+    signed: z.boolean(),
+    cancelled: z.boolean(),
+    expired: z.boolean(),
+    opened: z.boolean(),
+    signerAddress: z.string().nullable(),
+    txBlob: z.string().nullable(),
+    txHash: z.string().nullable()
   })
 });
 
@@ -104,6 +154,43 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify(input),
       headers: { "Idempotency-Key": input.quoteId }
-    })
+    }),
+  acceptTransactionSignature: (input: {
+    transactionIntentId: string;
+    signerAddress: string;
+    signedTransactionHash: string;
+    txBlob: string;
+    unsignedTransactionFingerprint: string;
+  }) =>
+    request(`/api/v1/transactions/${input.transactionIntentId}/signature`, transactionIntentEnvelopeSchema, {
+      method: "POST",
+      body: JSON.stringify(input)
+    }),
+  submitTransaction: (transactionIntentId: string) =>
+    request(`/api/v1/transactions/${transactionIntentId}/submit`, transactionIntentEnvelopeSchema, {
+      method: "POST"
+    }),
+  monitorTransaction: (transactionIntentId: string) =>
+    request(`/api/v1/transactions/${transactionIntentId}/monitor`, transactionStatusResponseSchema, {
+      method: "POST"
+    }),
+  createXamanSignInPayload: () =>
+    request("/api/v1/wallets/xaman/payloads/sign-in", xamanPayloadResponseSchema, {
+      method: "POST"
+    }),
+  createXamanTransactionPayload: (input: { transaction: UnsignedXrplTransaction }) =>
+    request("/api/v1/wallets/xaman/payloads/sign-transaction", xamanPayloadResponseSchema, {
+      method: "POST",
+      body: JSON.stringify(input)
+    }),
+  getXamanPayloadStatus: (uuid: string) =>
+    request(`/api/v1/wallets/xaman/payloads/${uuid}`, xamanPayloadStatusSchema),
+  apiBaseUrl: () => apiBaseUrl
+};
+
+export type XamanPayloadStatus = Awaited<ReturnType<typeof apiClient.getXamanPayloadStatus>>["payload"];
+export type TransactionStatusResponse = z.infer<typeof transactionStatusResponseSchema>;
+export type SignedTransactionBody = SignedXrplTransaction & {
+  signedTransactionHash?: string;
 };
 

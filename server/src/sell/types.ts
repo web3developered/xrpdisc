@@ -41,6 +41,7 @@ export type SellTransactionPlan = {
   status: SellAssetExecutionStatus;
   unsignedTransaction: XrplPaymentTransaction;
   transactionIntentId?: string;
+  transactionIntentFingerprint?: string;
   signedTransactionHash?: string;
   confirmedLedgerIndex?: number;
   failureReason?: string;
@@ -72,4 +73,3 @@ export type SellIntent = {
 export type AssetDiscovery = {
   discover(session: WalletSession): Promise<DiscoveredSellAsset[]>;
 };
-

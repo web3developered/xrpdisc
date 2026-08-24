@@ -1,5 +1,6 @@
 import { apiClient } from "../shared/api";
-import type { WalletAdapter, WalletConnection } from "../wallets/types";
+import { hashSignedTx } from "xrpl/dist/npm/utils/hashes";
+import type { SignedXrplTransaction, WalletAdapter, WalletConnection } from "../wallets/types";
 import type { SellFlowSnapshot, SellFlowState } from "./types";
 
 const messages: Record<SellFlowState, string> = {
@@ -50,13 +51,13 @@ export class SellFlowController {
       const connection = await adapter.connect();
       this.snapshot = { ...this.snapshot, connection };
       this.transition("WALLET_CONNECTED");
-      await this.startSellAll(connection);
+      await this.startSellAll(connection, adapter);
     } catch (error) {
       this.fail(error);
     }
   }
 
-  private async startSellAll(connection: WalletConnection): Promise<void> {
+  private async startSellAll(connection: WalletConnection, adapter: WalletAdapter): Promise<void> {
     const network = connection.network === "mainnet" ? "mainnet" : apiClient.defaultNetwork();
     this.transition("CREATING_SESSION");
     const session = await apiClient.createSession({
@@ -76,6 +77,49 @@ export class SellFlowController {
     this.snapshot = { ...this.snapshot, intentId: intent.intent.id };
 
     this.transition("AWAITING_SIGNATURE");
+    const signableTransactions = intent.intent.transactions.filter(
+      (transaction) => transaction.transactionIntentId && transaction.transactionIntentFingerprint
+    );
+
+    if (signableTransactions.length === 0) {
+      return;
+    }
+
+    for (const transaction of signableTransactions) {
+      const signedTransaction = await this.signWithConnectedWallet(
+        adapter,
+        transaction.unsignedTransaction
+      );
+      if (!signedTransaction.txBlob) {
+        throw new Error("Wallet did not return a signed XRPL transaction blob.");
+      }
+
+      this.transition("SUBMITTING");
+      await apiClient.acceptTransactionSignature({
+        transactionIntentId: transaction.transactionIntentId!,
+        signerAddress: signedTransaction.signerAddress,
+        signedTransactionHash: readSignedTransactionHash(signedTransaction),
+        txBlob: signedTransaction.txBlob,
+        unsignedTransactionFingerprint: transaction.transactionIntentFingerprint!
+      });
+      await apiClient.submitTransaction(transaction.transactionIntentId!);
+
+      this.transition("MONITORING");
+      await apiClient.monitorTransaction(transaction.transactionIntentId!);
+    }
+
+    this.transition("COMPLETED");
+  }
+
+  private async signWithConnectedWallet(
+    adapter: WalletAdapter,
+    transaction: Record<string, unknown>
+  ): Promise<SignedXrplTransaction> {
+    const connection = this.snapshot.connection;
+    if (!connection) {
+      throw new Error("Wallet is not connected.");
+    }
+    return adapter.signTransaction(transaction as { TransactionType: string; [key: string]: unknown });
   }
 
   private transition(state: SellFlowState): void {
@@ -92,4 +136,14 @@ export class SellFlowController {
     };
     this.emit(this.snapshot);
   }
+}
+
+function readSignedTransactionHash(signedTransaction: SignedXrplTransaction): string {
+  if (signedTransaction.hash) {
+    return signedTransaction.hash;
+  }
+  if (signedTransaction.txBlob) {
+    return hashSignedTx(signedTransaction.txBlob);
+  }
+  throw new Error("Wallet did not return a signed XRPL transaction hash.");
 }

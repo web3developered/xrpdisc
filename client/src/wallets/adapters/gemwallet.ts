@@ -1,3 +1,4 @@
+import * as gemWalletApi from "@gemwallet/api";
 import { WalletError, walletUnavailable } from "../errors";
 import type {
   SignedXrplTransaction,
@@ -10,7 +11,7 @@ import { BaseWalletAdapter } from "./base";
 import { createCapabilities } from "./capabilities";
 
 type GemWalletResponse<T> = {
-  type: "response" | "reject";
+  type?: "response" | "reject";
   result?: T;
 };
 
@@ -44,7 +45,7 @@ export class GemWalletAdapter extends BaseWalletAdapter {
     requiresBrowserExtension: true
   });
 
-  constructor(private readonly apiProvider: () => GemWalletApi | undefined = () => undefined) {
+  constructor(private readonly apiProvider: () => GemWalletApi | undefined = () => gemWalletApi as unknown as GemWalletApi) {
     super();
   }
 
@@ -67,7 +68,7 @@ export class GemWalletAdapter extends BaseWalletAdapter {
     }
 
     const addressResponse = await api.getAddress();
-    if (addressResponse.type !== "response" || !addressResponse.result?.address) {
+    if (addressResponse.type === "reject" || !addressResponse.result?.address) {
       throw new WalletError(this.id, "WALLET_REJECTED", "GemWallet did not return an address.");
     }
 
@@ -91,7 +92,7 @@ export class GemWalletAdapter extends BaseWalletAdapter {
 
     const address = await this.getAddress();
     const response = await api.signTransaction({ transaction });
-    if (response.type !== "response" || !response.result?.signature) {
+    if (response.type === "reject" || !response.result?.signature) {
       throw new WalletError(this.id, "WALLET_REJECTED", "GemWallet rejected the transaction.");
     }
 

@@ -15,12 +15,19 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@crossmarkio/sdk": "^0.4.0",
+    "@gemwallet/api": "^3.8.0",
+    "@ledgerhq/hw-app-xrp": "^6.37.7",
+    "@ledgerhq/hw-transport-webhid": "^6.36.0",
     "@vitejs/plugin-react": "^6.1.0",
+    "@walletconnect/sign-client": "^2.23.10",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.2",
     "vite": "^8.2.2",
+    "xrpl": "^5.0.0",
+    "xumm": "^1.0.0",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
   },

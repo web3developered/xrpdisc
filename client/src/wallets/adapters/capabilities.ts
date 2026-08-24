@@ -7,11 +7,11 @@ export function createCapabilities(
 ): WalletCapabilities {
   return {
     connect: { supported: true },
-    signTransaction: { supported: false, reason: "Transaction signing is enabled in later phases." },
-    signMessage: { supported: false, reason: "Message signing is not required for Phase 2." },
+    signTransaction: { supported: false, reason: "This wallet adapter does not support XRPL transaction signing." },
+    signMessage: { supported: false, reason: "Message signing is not required for Sell All Assets." },
     submitTransaction: {
       supported: false,
-      reason: "Submission is intentionally isolated until Phase 5."
+      reason: "Wallet adapters sign transactions; backend services validate, submit, and monitor them."
     },
     supportedNetworks: allXrplNetworks,
     requiresBrowserExtension: false,

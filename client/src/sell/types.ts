@@ -57,8 +57,9 @@ export type SellIntentResponse = {
       assetId: string;
       status: string;
       unsignedTransaction: Record<string, unknown>;
+      transactionIntentId?: string;
+      transactionIntentFingerprint?: string;
     }>;
     settlementEventReady: boolean;
   };
 };
-
