@@ -1,10 +1,6 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { App } from "./App";
-import "./styles.css";
+import { Buffer } from "buffer";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const browserGlobal = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
+browserGlobal.Buffer ??= Buffer;
+
+void import("./bootstrap");
