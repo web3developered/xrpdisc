@@ -105,9 +105,19 @@ export class TelegramObservabilitySink implements ObservabilitySink {
         disable_web_page_preview: true
       })
     });
+    const responseBody = await response.text();
 
-    if (!response.ok) {
-      const responseBody = await response.text();
+    let telegramOk = response.ok;
+    if (responseBody) {
+      try {
+        const parsed = JSON.parse(responseBody) as { ok?: boolean };
+        telegramOk = response.ok && parsed.ok === true;
+      } catch {
+        telegramOk = false;
+      }
+    }
+
+    if (!telegramOk) {
       throw new TelegramNotificationError(
         `Telegram notification failed with status ${response.status}`,
         response.status,

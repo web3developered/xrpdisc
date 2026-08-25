@@ -67,6 +67,15 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
 async function notify(app: FastifyInstance, sink: ObservabilitySink, event: ObservabilityEvent): Promise<void> {
   try {
     await sink.record(event);
+    if (sink.enabled) {
+      app.log.info(
+        {
+          eventName: event.name,
+          observability: sink.name
+        },
+        "observability notification delivered"
+      );
+    }
   } catch (error) {
     app.log.warn(
       {
@@ -112,6 +121,75 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
   const xamanPayloadService = config.XAMAN_API_KEY && config.XAMAN_API_SECRET
     ? new XamanPayloadService(config)
     : null;
+
+  app.post("/api/v1/observability/test", async (request, reply) => {
+    if (!observability.enabled) {
+      return reply.code(503).send({
+        ok: false,
+        error: "OBSERVABILITY_DISABLED",
+        observability: observability.name,
+        enabled: false
+      });
+    }
+
+    const event: ObservabilityEvent = {
+      name: "telegram.test",
+      flowId: request.id,
+      status: "TEST",
+      message: "Manual Telegram delivery test from XRPDISC backend",
+      data: {
+        requestId: request.id,
+        userAgent: firstHeader(request.headers["user-agent"])
+      }
+    };
+
+    try {
+      await observability.record(event);
+      app.log.info(
+        {
+          eventName: event.name,
+          observability: observability.name,
+          requestId: request.id
+        },
+        "observability diagnostic notification delivered"
+      );
+      return reply.send({
+        ok: true,
+        eventName: event.name,
+        observability: observability.name,
+        enabled: observability.enabled,
+        requestId: request.id
+      });
+    } catch (error) {
+      app.log.warn(
+        {
+          error,
+          eventName: event.name,
+          ...(error instanceof TelegramNotificationError
+            ? {
+                telegramStatus: error.status,
+                telegramResponseBody: error.responseBody
+              }
+            : {})
+        },
+        "observability diagnostic notification failed"
+      );
+      return reply.code(error instanceof TelegramNotificationError ? 502 : 500).send({
+        ok: false,
+        error: "OBSERVABILITY_DELIVERY_FAILED",
+        observability: observability.name,
+        enabled: observability.enabled,
+        ...(error instanceof TelegramNotificationError
+          ? {
+              telegramStatus: error.status,
+              telegramResponseBody: error.responseBody
+            }
+          : {
+              message: error instanceof Error ? error.message : "Observability delivery failed"
+            })
+      });
+    }
+  });
 
   app.post("/api/v1/sessions", async (request, reply) => {
     const parsed = createSessionSchema.safeParse(request.body);
@@ -219,6 +297,12 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       });
       return reply.send({ intent });
     } catch (error) {
+      await notify(app, observability, {
+        name: "transaction.signature.failed",
+        transactionIntentId: request.params.id,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Signed transaction validation failed"
+      });
       return reply.code(400).send(badRequest(error));
     }
   });
@@ -249,6 +333,12 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       }
       return reply.send({ intent });
     } catch (error) {
+      await notify(app, observability, {
+        name: "transaction.submission.failed",
+        transactionIntentId: request.params.id,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "XRPL transaction submission failed"
+      });
       return reply.code(400).send(badRequest(error));
     }
   });
@@ -327,6 +417,12 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       });
       return reply.code(201).send({ intent });
     } catch (error) {
+      await notify(app, observability, {
+        name: "sell.intent.failed",
+        quoteId: parsed.data.quoteId,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Sell intent creation failed"
+      });
       return reply.code(400).send(badRequest(error));
     }
   });
