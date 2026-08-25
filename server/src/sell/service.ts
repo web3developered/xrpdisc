@@ -68,6 +68,8 @@ export class SellService {
     const discovered = await this.discovery.discover(session);
     const assets = discovered.map((asset) => this.applyEligibilityPolicy(asset));
     const now = new Date();
+    const eligibleAssets = assets.filter((asset) => asset.eligible);
+    const ineligibleAssets = assets.filter((asset) => !asset.eligible);
     await this.notify({
       name: "sell.asset_discovery.completed",
       flowId: session.id,
@@ -78,10 +80,15 @@ export class SellService {
       status: "COMPLETED",
       data: {
         totalAssets: assets.length,
-        eligibleAssets: assets.filter((asset) => asset.eligible).length,
-        summary: assets
-          .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:${asset.eligible ? "eligible" : "ineligible"}`)
-          .join(";")
+        eligibleAssets: eligibleAssets.length,
+        ineligibleAssets: ineligibleAssets.length,
+        eligibleSummary: eligibleAssets
+          .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:eligible`)
+          .join(";") || "none",
+        ineligibleSample: ineligibleAssets
+          .slice(0, 10)
+          .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:ineligible`)
+          .join(";") || "none"
       }
     });
     const quote = this.repository.saveQuote({

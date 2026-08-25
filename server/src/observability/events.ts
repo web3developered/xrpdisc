@@ -41,14 +41,24 @@ export class TelegramNotificationError extends Error {
   }
 }
 
+const TELEGRAM_MAX_MESSAGE_LENGTH = 3900;
+const TELEGRAM_MAX_VALUE_LENGTH = 900;
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, maxLength - 32)}...[truncated ${value.length} chars]`;
+}
+
 function formatValue(value: unknown): string {
   if (value === undefined || value === null) {
     return "";
   }
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+    return truncate(String(value), TELEGRAM_MAX_VALUE_LENGTH);
   }
-  return JSON.stringify(value);
+  return truncate(JSON.stringify(value), TELEGRAM_MAX_VALUE_LENGTH);
 }
 
 function formatEvent(event: ObservabilityEvent): string {
@@ -83,7 +93,7 @@ function formatEvent(event: ObservabilityEvent): string {
     }
   }
 
-  return lines.join("\n");
+  return truncate(lines.join("\n"), TELEGRAM_MAX_MESSAGE_LENGTH);
 }
 
 export class TelegramObservabilitySink implements ObservabilitySink {
