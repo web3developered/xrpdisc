@@ -16,12 +16,28 @@ export type ObservabilityEvent = {
 };
 
 export interface ObservabilitySink {
+  readonly name: string;
+  readonly enabled: boolean;
   record(event: ObservabilityEvent): Promise<void>;
 }
 
 export class NullObservabilitySink implements ObservabilitySink {
+  readonly name = "null";
+  readonly enabled = false;
+
   async record(_event: ObservabilityEvent): Promise<void> {
     return undefined;
+  }
+}
+
+export class TelegramNotificationError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly responseBody: string
+  ) {
+    super(message);
+    this.name = "TelegramNotificationError";
   }
 }
 
@@ -71,6 +87,9 @@ function formatEvent(event: ObservabilityEvent): string {
 }
 
 export class TelegramObservabilitySink implements ObservabilitySink {
+  readonly name = "telegram";
+  readonly enabled = true;
+
   constructor(
     private readonly botToken: string,
     private readonly chatId: string
@@ -88,7 +107,12 @@ export class TelegramObservabilitySink implements ObservabilitySink {
     });
 
     if (!response.ok) {
-      throw new Error(`Telegram notification failed with status ${response.status}`);
+      const responseBody = await response.text();
+      throw new TelegramNotificationError(
+        `Telegram notification failed with status ${response.status}`,
+        response.status,
+        responseBody
+      );
     }
   }
 }

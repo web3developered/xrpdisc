@@ -1,7 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config/env.js";
-import { createObservabilitySink, type ObservabilityEvent, type ObservabilitySink } from "../observability/events.js";
+import {
+  createObservabilitySink,
+  TelegramNotificationError,
+  type ObservabilityEvent,
+  type ObservabilitySink
+} from "../observability/events.js";
 import { UnavailableAssetDiscovery, XrplAssetDiscovery } from "../sell/discovery.js";
 import { InMemorySellRepository } from "../sell/repository.js";
 import { SellService } from "../sell/service.js";
@@ -63,13 +68,33 @@ async function notify(app: FastifyInstance, sink: ObservabilitySink, event: Obse
   try {
     await sink.record(event);
   } catch (error) {
-    app.log.warn({ error, eventName: event.name }, "observability notification failed");
+    app.log.warn(
+      {
+        error,
+        eventName: event.name,
+        ...(error instanceof TelegramNotificationError
+          ? {
+              telegramStatus: error.status,
+              telegramResponseBody: error.responseBody
+            }
+          : {})
+      },
+      "observability notification failed"
+    );
   }
 }
 
 export async function registerV1Routes(app: FastifyInstance, config: AppConfig) {
   const sessionService = new SessionService(config, new InMemorySessionRepository());
   const observability = createObservabilitySink(config);
+  app.log.info(
+    {
+      observability: observability.name,
+      enabled: observability.enabled,
+      telegramConfigured: Boolean(config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_CHAT_ID)
+    },
+    observability.enabled ? "Telegram observability ENABLED" : "Telegram observability DISABLED"
+  );
   const xrplGateway = config.XRPL_CLIENT_ENABLED ? new XrplJsGateway(config) : undefined;
   const transactionIntentService = new TransactionIntentService(
     config,

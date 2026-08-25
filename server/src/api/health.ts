@@ -16,6 +16,8 @@ export async function registerHealthRoutes(app: FastifyInstance, config: AppConf
       checks: {
         environment: config.NODE_ENV,
         xrplNetwork: config.XRPL_NETWORK,
+        xrplClientEnabled: config.XRPL_CLIENT_ENABLED,
+        telegramObservabilityConfigured: Boolean(config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_CHAT_ID),
         databaseConfigured,
         redisConfigured: Boolean(config.REDIS_URL)
       }
