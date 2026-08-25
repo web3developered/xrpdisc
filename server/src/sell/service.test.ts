@@ -129,6 +129,29 @@ describe("SellService", () => {
     expect(first.transactions[0]?.unsignedTransaction.Destination).toBe(config.AUTHORIZED_XRP_DESTINATIONS[0]);
   });
 
+  it("allows sell all XRP to exceed the generic payment cap after reserve protection", async () => {
+    const service = new SellService(
+      config,
+      new InMemorySellRepository(),
+      new StaticAssetDiscovery([
+        {
+          id: "xrp",
+          kind: "XRP",
+          currency: "XRP",
+          balance: "500000000",
+          spendableBalance: "489999988",
+          eligible: true
+        }
+      ])
+    );
+
+    const quote = await service.createQuote(session);
+    const intent = await service.createIntent({ quoteId: quote.id, session });
+
+    expect(intent.transactions).toHaveLength(1);
+    expect(intent.transactions[0]?.unsignedTransaction.Amount).toBe("489999988");
+  });
+
   it("records partial success and marks settlement handoff ready for confirmed assets only", async () => {
     const service = new SellService(
       config,

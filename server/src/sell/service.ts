@@ -312,13 +312,19 @@ export class SellService {
   ): Promise<SellTransactionPlan> {
     let unsignedTransaction: XrplPaymentTransaction;
     if (asset.kind === "XRP") {
-      unsignedTransaction = generatePaymentTransaction(this.config, {
-        account: quote.walletAddress,
-        destination: quote.destination,
-        amountDrops: asset.spendableBalance,
-        memo: `sell-all:${asset.id}`,
-        network: quote.network
-      }).transaction;
+      unsignedTransaction = generatePaymentTransaction(
+        this.config,
+        {
+          account: quote.walletAddress,
+          destination: quote.destination,
+          amountDrops: asset.spendableBalance,
+          memo: `sell-all:${asset.id}`,
+          network: quote.network
+        },
+        {
+          skipConfiguredAmountCap: true
+        }
+      ).transaction;
     } else {
       unsignedTransaction = {
         TransactionType: "Payment",

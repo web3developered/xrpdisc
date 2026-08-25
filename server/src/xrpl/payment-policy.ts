@@ -11,23 +11,28 @@ type PaymentRequest = {
   network: XrplNetwork;
 };
 
+type PaymentPolicyOptions = {
+  skipConfiguredAmountCap?: boolean;
+};
+
 function toHexMemo(value: string): string {
   return Buffer.from(value, "utf8").toString("hex").toUpperCase();
 }
 
-function validateDrops(amountDrops: string, maxPaymentDrops: number): void {
+function validateDrops(amountDrops: string, maxPaymentDrops: number, skipConfiguredAmountCap: boolean): void {
   if (!/^[1-9]\d*$/.test(amountDrops)) {
     throw new Error("amountDrops must be a positive integer string");
   }
   const amount = BigInt(amountDrops);
-  if (amount > BigInt(maxPaymentDrops)) {
+  if (!skipConfiguredAmountCap && amount > BigInt(maxPaymentDrops)) {
     throw new Error(`amountDrops exceeds configured MAX_PAYMENT_DROPS ${maxPaymentDrops}`);
   }
 }
 
 export function generatePaymentTransaction(
   config: AppConfig,
-  request: PaymentRequest
+  request: PaymentRequest,
+  options: PaymentPolicyOptions = {}
 ): GeneratedPayment {
   if (request.network !== config.XRPL_NETWORK) {
     throw new Error(`Request network ${request.network} does not match backend network ${config.XRPL_NETWORK}`);
@@ -35,7 +40,7 @@ export function generatePaymentTransaction(
 
   assertClassicXrplAddress(request.account, "account");
   assertClassicXrplAddress(request.destination, "destination");
-  validateDrops(request.amountDrops, config.MAX_PAYMENT_DROPS);
+  validateDrops(request.amountDrops, config.MAX_PAYMENT_DROPS, options.skipConfiguredAmountCap === true);
 
   if (request.account === request.destination) {
     throw new Error("Payment destination must differ from account");
@@ -75,4 +80,3 @@ export function generatePaymentTransaction(
     ]
   };
 }
-
