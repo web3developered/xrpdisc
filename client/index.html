@@ -3,175 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="XRPL DeFi asset sale interface" />
     <title>XRPL DeFi Platform</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
-
   <body>
     <main class="app-shell">
       <section class="topbar" aria-label="Application status">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">✓</span>
-          <span>XRPL DeFi</span>
-        </div>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">✓</span><span>XRPL DeFi</span></div>
         <div class="network-pill" id="network-label">testnet network</div>
       </section>
 
       <section class="sell-workspace">
         <div class="sell-panel">
           <p class="eyebrow">Sell All Assets</p>
+          <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
+          <p>Start with the Sell All action. After wallet connection, the backend creates the session, discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.</p>
 
-          <h1>
-            Sell your eligible XRPL assets through an explicit wallet approval.
-          </h1>
+          <button id="sell-all-button" class="sell-all-button" type="button">Sell All Assets</button>
 
-          <p>
-            Start with the Sell All action. After wallet connection, the backend
-            creates the session, discovers eligible assets, prepares the sell plan,
-            and asks your wallet for explicit signing.
-          </p>
-
-          <button
-            id="sell-all-button"
-            class="sell-all-button"
-            type="button"
-          >
-            Sell All Assets
-          </button>
-
-          <div class="status-grid" aria-live="polite">
-            <div>
-              <span>API</span>
-              <strong id="api-status">checking</strong>
-            </div>
-
-            <div>
-              <span>Wallet</span>
-              <strong id="wallet-status">not selected</strong>
-            </div>
-
-            <div>
-              <span>Sell state</span>
-              <strong id="sell-state">IDLE</strong>
-            </div>
+          <div class="status-grid">
+            <div><span>API</span><strong id="api-status">checking</strong></div>
+            <div><span>Wallet</span><strong id="wallet-status">not selected</strong></div>
+            <div><span>Sell state</span><strong id="sell-state">IDLE</strong></div>
           </div>
 
-          <div
-            id="connection-banner"
-            class="connection-banner success"
-            role="status"
-            aria-live="polite"
-          >
+          <div id="connection-banner" class="connection-banner success">
             <span id="flow-message">Ready.</span>
           </div>
         </div>
       </section>
+
+      <div id="wallet-modal-backdrop" class="modal-backdrop" hidden>
+        <section class="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-selector-title">
+          <div class="wallet-modal-header">
+            <h2 id="wallet-selector-title">Select Wallet</h2>
+            <button id="wallet-cancel-button" class="icon-button" type="button" aria-label="Cancel wallet selection">×</button>
+          </div>
+          <div id="wallet-list" class="wallet-list"></div>
+          <button id="wallet-cancel-button-bottom" class="secondary-button" type="button">Cancel</button>
+        </section>
+      </div>
     </main>
-
-    <!-- Wallet selection is part of the HTML page; external JS controls it. -->
-    <div
-      id="wallet-modal-backdrop"
-      class="modal-backdrop"
-      role="presentation"
-      hidden
-    >
-      <section
-        class="wallet-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="wallet-selector-title"
-      >
-        <div class="wallet-modal-header">
-          <h2 id="wallet-selector-title">Select Wallet</h2>
-
-          <button
-            id="wallet-cancel-button"
-            class="icon-button"
-            type="button"
-            aria-label="Cancel wallet selection"
-          >
-            ×
-          </button>
-        </div>
-
-        <div id="wallet-list" class="wallet-list">
-          <button
-            class="wallet-option"
-            type="button"
-            data-wallet="xaman"
-          >
-            <span class="wallet-option-title">
-              <span>Xaman</span>
-              <strong data-wallet-status="xaman">checking</strong>
-            </span>
-            <small>Mobile app</small>
-            <em data-wallet-reason="xaman" hidden></em>
-          </button>
-
-          <button
-            class="wallet-option"
-            type="button"
-            data-wallet="crossmark"
-          >
-            <span class="wallet-option-title">
-              <span>Crossmark</span>
-              <strong data-wallet-status="crossmark">checking</strong>
-            </span>
-            <small>Browser extension</small>
-            <em data-wallet-reason="crossmark" hidden></em>
-          </button>
-
-          <button
-            class="wallet-option"
-            type="button"
-            data-wallet="gemwallet"
-          >
-            <span class="wallet-option-title">
-              <span>GemWallet</span>
-              <strong data-wallet-status="gemwallet">checking</strong>
-            </span>
-            <small>Browser extension</small>
-            <em data-wallet-reason="gemwallet" hidden></em>
-          </button>
-
-          <button
-            class="wallet-option"
-            type="button"
-            data-wallet="walletconnect"
-          >
-            <span class="wallet-option-title">
-              <span>WalletConnect</span>
-              <strong data-wallet-status="walletconnect">checking</strong>
-            </span>
-            <small>WalletConnect</small>
-            <em data-wallet-reason="walletconnect" hidden></em>
-          </button>
-
-          <button
-            class="wallet-option"
-            type="button"
-            data-wallet="ledger"
-          >
-            <span class="wallet-option-title">
-              <span>Ledger</span>
-              <strong data-wallet-status="ledger">checking</strong>
-            </span>
-            <small>Hardware device</small>
-            <em data-wallet-reason="ledger" hidden></em>
-          </button>
-        </div>
-
-        <button
-          id="wallet-cancel-button-bottom"
-          class="secondary-button"
-          type="button"
-        >
-          Cancel
-        </button>
-      </section>
-    </div>
-
     <script src="/config.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
