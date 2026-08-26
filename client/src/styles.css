@@ -1,3 +1,7 @@
+*[hidden] {
+  display: none !important;
+}
+
 :root {
   color: #182026;
   background: #f5f7f8;
