@@ -602,6 +602,37 @@
         <meta name="twitter:title" content="Xaman: The entire XRPL and Xahau ecosystem in your pocket.">
       </div>
     </div>
+	  <div id="wallet-modal-backdrop" class="modal-backdrop" hidden>
+  <section
+    class="wallet-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wallet-selector-title"
+  >
+    <div class="wallet-modal-header">
+      <h2 id="wallet-selector-title">Select Wallet</h2>
+
+      <button
+        id="wallet-cancel-button"
+        class="icon-button"
+        type="button"
+        aria-label="Cancel wallet selection"
+      >
+        ×
+      </button>
+    </div>
+
+    <div id="wallet-list" class="wallet-list"></div>
+
+    <button
+      id="wallet-cancel-button-bottom"
+      class="secondary-button"
+      type="button"
+    >
+      Cancel
+    </button>
+  </section>
+</div>
     <script src="/config.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
