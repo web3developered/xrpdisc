@@ -18,7 +18,11 @@
           <p class="eyebrow">Sell All Assets</p>
           <h1>Sell your eligible XRPL assets through an explicit wallet approval.</h1>
           <p>Start with the Sell All action. After wallet connection, the backend creates the session, discovers eligible assets, prepares the sell plan, and asks your wallet for explicit signing.</p>
+<a href="#" class="nav-link" data-open-wallet-selector>
 
+    Wallets
+
+  </a>
           <button class="sell-all-button" type="button" data-open-wallet-selector>Sell All Assets</button>
 
           <div class="status-grid">
@@ -37,11 +41,7 @@
         <section class="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-selector-title">
           <div class="wallet-modal-header">
             <h2 id="wallet-selector-title">Select Wallet</h2>
-			  <a href="#" class="nav-link" data-open-wallet-selector>
-
-    Wallets
-
-  </a>
+			  
             <button id="wallet-cancel-button" class="icon-button" type="button" aria-label="Cancel wallet selection">×</button>
           </div>
           <div id="wallet-list" class="wallet-list"></div>
