@@ -37,6 +37,10 @@ export class SellFlowController {
 
   constructor(private readonly emit: SellFlowListener) {}
 
+  getSnapshot(): SellFlowSnapshot {
+    return this.snapshot;
+  }
+
   openWalletSelector(): void {
     this.transition("WALLET_SELECTOR_OPEN");
   }
