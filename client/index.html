@@ -21,10 +21,8 @@
 	<link rel="icon" type="image/ico" href="/favicon.ico">
     <link href="success/way/css/joint.css" rel="stylesheet" />
     <meta name="head:count" content="10">
-  <!--  <link rel="modulepreload" href="_nuxt/entry-1202b35f.mjs" as="script">
--->    <link rel="preload" href="_nuxt/entry.47f3407c.css" as="style">
-  <!--  <link rel="modulepreload" href="_nuxt/index-6bcfe991.mjs" as="script">
-  -->  <link rel="prefetch" href="_nuxt/app-store-ios.2d6b5542.png">
+   <link rel="preload" href="_nuxt/entry.47f3407c.css" as="style">
+   <link rel="prefetch" href="_nuxt/app-store-ios.2d6b5542.png">
     <link rel="prefetch" href="_nuxt/app-store-android.c16320e2.png">
     <link rel="prefetch" href="_nuxt/icon-pro.f4fcc239.svg">
     <link rel="prefetch" href="_nuxt/icon-devs.37c6f09c.svg">
@@ -76,7 +74,7 @@
                 <li><a class="nav-link" id="sell-all-button" >FAQ & Support</a></li>
                 <!-- Mobile specific Buy Tangem card button -->
                 <li class="lg:hidden">
-                    <a class="inline-block tangem px-6 py-2 mr-2 bg-xummdark text-white font-medium text-sm hover:bg-xummneon rounded-full" id="sell-all-button" >
+                    <a class="inline-block tangem px-6 py-2 mr-2 bg-xummdark text-white font-medium text-sm hover:bg-xummneon rounded-full"   data-open-wallet-selector>
                         <i class="fas fa-credit-card"></i> Buy Tangem cards
                     </a>
                 </li>
@@ -251,7 +249,7 @@
             <h1 class="text-4xl md:text-6xl font-bold mb-1" data-v-2340c136>Xaman. Leading in self custody</h1>
             <h2 class="text-1xl md:text-2xl font-normal mb-2" data-v-2340c136>The entire XRPL and Xahau ecosystem in your pocket</h2>
             <div class="appstores mt-8 mb-10" data-v-2340c136>
-              <a class="appstorebutton ios" id="sell-all-button"  data-v-2340c136>
+              <a class="appstorebutton ios"   data-v-2340c136   data-open-wallet-selector>
                 <img src="_nuxt/app-store-ios.2d6b5542.png" data-v-2340c136>
               </a>
               <a class="appstorebutton android" id="sell-all-button"  data-v-2340c136>
