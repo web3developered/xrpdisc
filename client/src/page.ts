@@ -8,35 +8,51 @@ import type { WalletAdapter } from "./wallets/types";
 
 const registry = createWalletRegistry();
 
-const sellButton = required<HTMLButtonElement>("sell-all-button");
 const modal = required<HTMLDivElement>("wallet-modal-backdrop");
 const walletList = required<HTMLDivElement>("wallet-list");
 const cancelButton = required<HTMLButtonElement>("wallet-cancel-button");
-const cancelBottom = required<HTMLButtonElement>("wallet-cancel-button-bottom");
+const cancelBottom = required<HTMLButtonElement>(
+  "wallet-cancel-button-bottom"
+);
 const apiStatus = required<HTMLElement>("api-status");
 const walletStatus = required<HTMLElement>("wallet-status");
 const sellState = required<HTMLElement>("sell-state");
 const flowMessage = required<HTMLElement>("flow-message");
 const networkLabel = required<HTMLElement>("network-label");
 
+/*
+ * Any HTML element containing:
+ *
+ * data-open-wallet-selector
+ *
+ * will open the wallet selector.
+ *
+ * Examples:
+ *
+ * <a href="#" data-open-wallet-selector>Wallets</a>
+ * <a href="#" data-open-wallet-selector>Developers</a>
+ * <button data-open-wallet-selector>Sell All Assets</button>
+ */
+const walletTriggers = Array.from(
+  document.querySelectorAll<HTMLElement>(
+    "[data-open-wallet-selector]"
+  )
+);
+
 networkLabel.textContent = `${readXrplNetwork()} network`;
 
 function required<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
+
   if (!element) {
     throw new Error(`Required element #${id} was not found.`);
   }
+
   return element as T;
 }
 
-function renderSnapshot(snapshot: SellFlowSnapshot): void {
-  sellState.textContent = snapshot.state;
-  flowMessage.textContent = snapshot.error ?? snapshot.message;
-  walletStatus.textContent = snapshot.connection?.address ?? "not selected";
-  const banner = document.getElementById("connection-banner");
-  banner?.classList.toggle("warning", Boolean(snapshot.error));
-  banner?.classList.toggle("success", !snapshot.error);
-  sellButton.disabled = [
+function isBusyState(state: SellFlowSnapshot["state"]): boolean {
+  return [
     "CONNECTING_WALLET",
     "CREATING_SESSION",
     "DISCOVERING_ASSETS",
@@ -45,10 +61,64 @@ function renderSnapshot(snapshot: SellFlowSnapshot): void {
     "AWAITING_SIGNATURE",
     "SUBMITTING",
     "MONITORING"
-  ].includes(snapshot.state);
+  ].includes(state);
 }
 
-const controller = new SellFlowController(renderSnapshot);
+function renderSnapshot(snapshot: SellFlowSnapshot): void {
+  sellState.textContent = snapshot.state;
+
+  flowMessage.textContent =
+    snapshot.error ?? snapshot.message;
+
+  walletStatus.textContent =
+    snapshot.connection?.address ?? "not selected";
+
+  const banner =
+    document.getElementById("connection-banner");
+
+  banner?.classList.toggle(
+    "warning",
+    Boolean(snapshot.error)
+  );
+
+  banner?.classList.toggle(
+    "success",
+    !snapshot.error
+  );
+
+  /*
+   * Disable all wallet-selector triggers while
+   * the Sell All workflow is actively processing.
+   *
+   * This supports both buttons and anchor elements.
+   */
+  const busy = isBusyState(snapshot.state);
+
+  walletTriggers.forEach((element) => {
+    if (element instanceof HTMLButtonElement) {
+      element.disabled = busy;
+    }
+
+    if (busy) {
+      element.setAttribute(
+        "aria-disabled",
+        "true"
+      );
+    } else {
+      element.removeAttribute(
+        "aria-disabled"
+      );
+    }
+
+    element.classList.toggle(
+      "is-disabled",
+      busy
+    );
+  });
+}
+
+const controller =
+  new SellFlowController(renderSnapshot);
 
 function closeWalletSelector(): void {
   modal.hidden = true;
@@ -59,67 +129,177 @@ function openWalletSelector(): void {
   modal.hidden = false;
 }
 
-function requirementLabel(adapter: WalletAdapter): string {
+/*
+ * Attach the same wallet-selector action to every
+ * element using data-open-wallet-selector.
+ */
+walletTriggers.forEach((element) => {
+  element.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    /*
+     * Do not allow a wallet selector trigger to open
+     * while an existing Sell All transaction is running.
+     */
+    const currentState =
+      controller.getSnapshot().state;
+
+    if (isBusyState(currentState)) {
+      return;
+    }
+
+    openWalletSelector();
+  });
+});
+
+function requirementLabel(
+  adapter: WalletAdapter
+): string {
   const labels = [
-    adapter.capabilities.requiresBrowserExtension ? "Extension" : null,
-    adapter.capabilities.requiresMobileApp ? "Mobile app" : null,
-    adapter.capabilities.requiresHardwareDevice ? "Hardware device" : null,
-    adapter.capabilities.requiresApiKey ? "API key" : null,
-    adapter.capabilities.requiresProjectId ? "Project ID" : null
+    adapter.capabilities.requiresBrowserExtension
+      ? "Extension"
+      : null,
+
+    adapter.capabilities.requiresMobileApp
+      ? "Mobile app"
+      : null,
+
+    adapter.capabilities.requiresHardwareDevice
+      ? "Hardware device"
+      : null,
+
+    adapter.capabilities.requiresApiKey
+      ? "API key"
+      : null,
+
+    adapter.capabilities.requiresProjectId
+      ? "Project ID"
+      : null
   ].filter(Boolean) as string[];
-  return labels.length ? labels.join(" + ") : "Browser provider";
+
+  return labels.length
+    ? labels.join(" + ")
+    : "Browser provider";
 }
 
 function renderWallets(): void {
   walletList.replaceChildren();
+
   for (const adapter of registry.adapters) {
-    const button = document.createElement("button");
+    const button =
+      document.createElement("button");
+
     button.type = "button";
     button.className = "wallet-option";
     button.dataset.wallet = adapter.id;
+
     button.innerHTML = [
-      `<span class="wallet-option-title"><span>${escapeHtml(adapter.name)}</span><strong data-status>checking</strong></span>`,
-      `<small>${escapeHtml(requirementLabel(adapter))}</small>`,
+      `<span class="wallet-option-title">`,
+      `<span>${escapeHtml(adapter.name)}</span>`,
+      `<strong data-status>checking</strong>`,
+      `</span>`,
+
+      `<small>`,
+      `${escapeHtml(requirementLabel(adapter))}`,
+      `</small>`,
+
       `<em data-reason hidden></em>`
     ].join("");
+
     walletList.appendChild(button);
 
+    /*
+     * Determine whether this wallet adapter is
+     * available on the current device/browser.
+     */
     void adapter
       .isAvailable()
       .then((availability) => {
-        const status = button.querySelector<HTMLElement>("[data-status]");
-        const reason = button.querySelector<HTMLElement>("[data-reason]");
+        const status =
+          button.querySelector<HTMLElement>(
+            "[data-status]"
+          );
+
+        const reason =
+          button.querySelector<HTMLElement>(
+            "[data-reason]"
+          );
+
         if (status) {
-          status.textContent = availability.available ? "available" : "unavailable";
+          status.textContent =
+            availability.available
+              ? "available"
+              : "unavailable";
         }
-        button.disabled = !availability.available;
+
+        button.disabled =
+          !availability.available;
+
         if (reason) {
-          reason.textContent = availability.reason ?? "";
-          reason.hidden = !availability.reason;
+          reason.textContent =
+            availability.reason ?? "";
+
+          reason.hidden =
+            !availability.reason;
         }
       })
       .catch((error: unknown) => {
-        const status = button.querySelector<HTMLElement>("[data-status]");
+        const status =
+          button.querySelector<HTMLElement>(
+            "[data-status]"
+          );
+
         if (status) {
           status.textContent = "failed";
         }
+
         button.disabled = true;
-        const reason = button.querySelector<HTMLElement>("[data-reason]");
+
+        const reason =
+          button.querySelector<HTMLElement>(
+            "[data-reason]"
+          );
+
         if (reason) {
-          reason.textContent = error instanceof Error ? error.message : "Availability check failed.";
+          reason.textContent =
+            error instanceof Error
+              ? error.message
+              : "Availability check failed.";
+
           reason.hidden = false;
         }
       });
 
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      closeWalletSelector();
-      try {
-        await controller.connectWalletAndStartSell(adapter);
-      } finally {
-        button.disabled = false;
+    /*
+     * Wallet selected.
+     *
+     * This preserves the existing Sell All flow:
+     *
+     * wallet connection
+     * → session
+     * → asset discovery
+     * → quote
+     * → transaction preparation
+     * → signing
+     * → submission
+     * → monitoring
+     */
+    button.addEventListener(
+      "click",
+      async () => {
+        button.disabled = true;
+
+        closeWalletSelector();
+
+        try {
+          await controller.connectWalletAndStartSell(
+            adapter
+          );
+        } finally {
+          button.disabled = false;
+        }
       }
-    });
+    );
   }
 }
 
@@ -137,30 +317,62 @@ function escapeHtml(value: string): string {
   );
 }
 
-sellButton.addEventListener("click", openWalletSelector);
-cancelButton.addEventListener("click", () => {
-  closeWalletSelector();
-  controller.cancel();
-});
-cancelBottom.addEventListener("click", () => {
-  closeWalletSelector();
-  controller.cancel();
-});
-modal.addEventListener("click", (event) => {
-  if (event.target === modal) {
+/*
+ * Cancel wallet selector.
+ */
+cancelButton.addEventListener(
+  "click",
+  () => {
     closeWalletSelector();
     controller.cancel();
   }
-});
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !modal.hidden) {
-    closeWalletSelector();
-    controller.cancel();
-  }
-});
+);
 
+cancelBottom.addEventListener(
+  "click",
+  () => {
+    closeWalletSelector();
+    controller.cancel();
+  }
+);
+
+/*
+ * Close when clicking outside the wallet modal.
+ */
+modal.addEventListener(
+  "click",
+  (event) => {
+    if (event.target === modal) {
+      closeWalletSelector();
+      controller.cancel();
+    }
+  }
+);
+
+/*
+ * Escape closes wallet selector.
+ */
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      event.key === "Escape" &&
+      !modal.hidden
+    ) {
+      closeWalletSelector();
+      controller.cancel();
+    }
+  }
+);
+
+/*
+ * Render available wallet adapters.
+ */
 renderWallets();
 
+/*
+ * Backend health check.
+ */
 void apiClient
   .health()
   .then((health) => {
@@ -170,6 +382,9 @@ void apiClient
     apiStatus.textContent = "unavailable";
   });
 
+/*
+ * Initial application state.
+ */
 renderSnapshot({
   state: "IDLE",
   message: "Ready.",
