@@ -19,6 +19,8 @@ const walletStatus = required<HTMLElement>("wallet-status");
 const sellState = required<HTMLElement>("sell-state");
 const flowMessage = required<HTMLElement>("flow-message");
 const networkLabel = required<HTMLElement>("network-label");
+const walletSearchInput = document.getElementById("wallet-search-input") as HTMLInputElement | null;
+const walletSearchCount = document.getElementById("wallet-search-count");
 
 /*
  * Any HTML element containing:
@@ -192,18 +194,15 @@ function renderWallets(): void {
     button.type = "button";
     button.className = "wallet-option";
     button.dataset.wallet = adapter.id;
+    button.dataset.walletInitial = adapter.name.slice(0, 1).toUpperCase();
 
     button.innerHTML = [
       `<span class="wallet-option-title">`,
-      `<span>${escapeHtml(adapter.name)}</span>`,
+      `<span class="wallet-option-name">${escapeHtml(adapter.name)}</span>`,
       `<strong data-status>checking</strong>`,
-      `</span>`,
-
-      `<small>`,
-      `${escapeHtml(requirementLabel(adapter))}`,
-      `</small>`,
-
-      `<em data-reason hidden></em>`
+      `<small class="wallet-option-requirement">${escapeHtml(requirementLabel(adapter))}</small>`,
+      `<em data-reason hidden></em>`,
+      `</span>`
     ].join("");
 
     walletList.appendChild(button);
@@ -228,8 +227,10 @@ function renderWallets(): void {
         if (status) {
           status.textContent =
             availability.available
-              ? "available"
+              ? ""
               : "unavailable";
+          status.classList.toggle("is-available", availability.available);
+          status.classList.toggle("is-unavailable", !availability.available);
         }
 
         button.disabled =
@@ -250,7 +251,8 @@ function renderWallets(): void {
           );
 
         if (status) {
-          status.textContent = "failed";
+          status.textContent = "unavailable";
+          status.classList.add("is-unavailable");
         }
 
         button.disabled = true;
@@ -301,6 +303,24 @@ function renderWallets(): void {
       }
     );
   }
+}
+
+if (walletSearchInput) {
+  walletSearchInput.addEventListener("input", () => {
+    const query = walletSearchInput.value.trim().toLowerCase();
+    let visible = 0;
+
+    walletList.querySelectorAll<HTMLButtonElement>(".wallet-option").forEach((button) => {
+      const adapterName = button.querySelector<HTMLElement>(".wallet-option-title > span")?.textContent ?? "";
+      const matches = adapterName.toLowerCase().includes(query);
+      button.hidden = !matches;
+      if (matches) visible += 1;
+    });
+
+    if (walletSearchCount) {
+      walletSearchCount.textContent = query ? String(visible) : String(registry.adapters.length);
+    }
+  });
 }
 
 function escapeHtml(value: string): string {
