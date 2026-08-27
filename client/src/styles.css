@@ -248,10 +248,16 @@ button {
   place-items: center;
   background: rgba(16, 29, 34, 0.48);
   padding: 18px;
+  z-index: 20000;
+  isolation: isolate;
 }
 
 .wallet-modal {
+  position: relative;
+  z-index: 20001;
   width: min(460px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
 }
 
 .wallet-modal-header {
