@@ -154,6 +154,14 @@ walletTriggers.forEach((element) => {
   });
 });
 
+const walletLogoSources: Record<string, string> = {
+  xaman: "/images/xaman-wallet.png",
+  crossmark: "https://lh3.googleusercontent.com/FyU6qEipebpS98wYcAXannNf_FP0IB1mcSLYoz6SsYDY84R9-sTJB4n0-YbAhyUVJONJlK29ArmScw24tqoJlaFI=s60",
+  gemwallet: "https://gemwallet.com/images/presskit/gemwallet-icon-1024x1024.png",
+  walletconnect: "/images/wallet-connect.png",
+  ledger: "/images/ledger.png"
+};
+
 function requirementLabel(
   adapter: WalletAdapter
 ): string {
@@ -194,16 +202,34 @@ function renderWallets(): void {
     button.type = "button";
     button.className = "wallet-option";
     button.dataset.wallet = adapter.id;
-    button.dataset.walletInitial = adapter.name.slice(0, 1).toUpperCase();
 
-    button.innerHTML = [
-      `<span class="wallet-option-title">`,
-      `<span class="wallet-option-name">${escapeHtml(adapter.name)}</span>`,
-      `<strong data-status>checking</strong>`,
-      `<small class="wallet-option-requirement">${escapeHtml(requirementLabel(adapter))}</small>`,
-      `<em data-reason hidden></em>`,
-      `</span>`
-    ].join("");
+    const logo = document.createElement("img");
+    logo.className = "wallet-option-logo";
+    logo.alt = "";
+    logo.decoding = "async";
+    logo.src = walletLogoSources[adapter.id] ?? "/favicon.ico";
+
+    const content = document.createElement("span");
+    content.className = "wallet-option-title";
+
+    const name = document.createElement("span");
+    name.className = "wallet-option-name";
+    name.textContent = adapter.name;
+
+    const status = document.createElement("strong");
+    status.dataset.status = "";
+    status.textContent = "checking";
+
+    const requirement = document.createElement("small");
+    requirement.className = "wallet-option-requirement";
+    requirement.textContent = requirementLabel(adapter);
+
+    const reason = document.createElement("em");
+    reason.dataset.reason = "";
+    reason.hidden = true;
+
+    content.append(name, status, requirement, reason);
+    button.append(logo, content);
 
     walletList.appendChild(button);
 
@@ -323,19 +349,6 @@ if (walletSearchInput) {
   });
 }
 
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>'"]/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;"
-      })[character] ?? character
-  );
-}
 
 /*
  * Cancel wallet selector.
