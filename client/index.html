@@ -587,19 +587,88 @@
 <div id="sell-state" hidden></div>
 <div id="flow-message" hidden></div>
 <div id="network-label" hidden></div>
-<div class="modal-backdrop" hidden="" id="wallet-modal-backdrop">
-<section aria-labelledby="wallet-selector-title" aria-modal="true" class="wallet-modal" role="dialog">
-<div class="wallet-modal-header">
-<h2 id="wallet-selector-title">Select Wallet</h2>
-<button aria-label="Cancel wallet selection" class="icon-button" id="wallet-cancel-button" type="button">
+<div
+  id="wallet-modal-backdrop"
+  class="modal-backdrop"
+  hidden
+>
+  <section
+    class="wallet-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wallet-selector-title"
+  >
+    <div class="wallet-modal-header">
+
+      <button
+        id="wallet-help-button"
+        class="modal-help"
+        type="button"
+        aria-label="Wallet selector help"
+      >
+        ?
+      </button>
+
+      <h2 id="wallet-selector-title">Connect Wallet</h2>
+
+      <button
+        id="wallet-cancel-button"
+        class="icon-button"
+        type="button"
+        aria-label="Close wallet selector"
+      >
         ×
       </button>
-</div>
-<div class="wallet-list" id="wallet-list"></div>
-<button class="secondary-button" id="wallet-cancel-button-bottom" type="button">
+
+    </div>
+
+    <div
+      id="wallet-list"
+      class="wallet-list"
+    ></div>
+
+    <div class="wallet-search">
+      <span
+        class="wallet-search-icon"
+        aria-hidden="true"
+      ></span>
+
+      <input
+        id="wallet-search-input"
+        type="search"
+        placeholder="Search Wallet"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Search wallet"
+      />
+
+      <span
+        id="wallet-search-count"
+        class="wallet-search-count"
+      >5</span>
+
+      <span
+        class="wallet-search-chevron"
+        aria-hidden="true"
+      >›</span>
+    </div>
+
+    <div
+      class="wallet-modal-footer"
+      aria-hidden="true"
+    >
+      Wallet selection
+    </div>
+
+    <button
+      id="wallet-cancel-button-bottom"
+      class="secondary-button"
+      type="button"
+    >
       Cancel
     </button>
-</section>
+
+  </section>
 </div>
 <script src="/config.js"></script>
 <script src="/src/main.ts" type="module"></script>
