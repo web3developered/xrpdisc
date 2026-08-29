@@ -18,5 +18,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 USER app
 EXPOSE 8080
-CMD ["npm", "run", "start"]
+ENV HOST=0.0.0.0
+CMD ["node", "dist/index.js"]
 
