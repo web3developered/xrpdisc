@@ -5,6 +5,7 @@ describe("environment safety", () => {
   it("defaults XRPL to testnet", () => {
     const config = loadConfig({});
     expect(config.XRPL_NETWORK).toBe("testnet");
+    expect(config.HOST).toBe("0.0.0.0");
     expect(config.XRPL_RPC_URL).toBe("wss://s.altnet.rippletest.net:51233");
   });
 

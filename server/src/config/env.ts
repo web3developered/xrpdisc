@@ -4,6 +4,7 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
     PORT: z.coerce.number().int().positive().default(8080),
+    HOST: z.string().min(1).default("0.0.0.0"),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
