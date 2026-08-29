@@ -7,7 +7,7 @@ const envSchema = z
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
-    XRPL_RPC_URL: z.string().min(1).default("wss://s.altnet.rippletest.net:51233"),
+    XRPL_RPC_URL: z.string().min(1).optional(),
     XRPL_CLIENT_ENABLED: z
       .enum(["true", "false"])
       .default("false")
@@ -42,9 +42,17 @@ const envSchema = z
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(1800),
     REQUIRE_EXPLICIT_MAINNET_ENABLE: z
       .enum(["true", "false"])
-      .default("false")
+      .default("true")
       .transform((value) => value === "true")
   })
+  .transform((env) => ({
+    ...env,
+    XRPL_RPC_URL:
+      env.XRPL_RPC_URL ??
+      (env.XRPL_NETWORK === "mainnet"
+        ? "wss://xrplcluster.com"
+        : "wss://s.altnet.rippletest.net:51233")
+  }))
   .superRefine((env, ctx) => {
     if (env.XRPL_NETWORK === "mainnet" && env.REQUIRE_EXPLICIT_MAINNET_ENABLE !== true) {
       ctx.addIssue({

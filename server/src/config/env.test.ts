@@ -5,6 +5,7 @@ describe("environment safety", () => {
   it("defaults XRPL to testnet", () => {
     const config = loadConfig({});
     expect(config.XRPL_NETWORK).toBe("testnet");
+    expect(config.XRPL_RPC_URL).toBe("wss://s.altnet.rippletest.net:51233");
   });
 
   it("does not require database configuration for the Phase 1 shell", () => {
@@ -12,17 +13,26 @@ describe("environment safety", () => {
     expect(config.DATABASE_URL).toBeUndefined();
   });
 
-  it("rejects mainnet unless explicitly enabled", () => {
-    expect(() =>
-      loadConfig({
-        DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/xrpl_defi",
-        XRPL_NETWORK: "mainnet",
-        AUTHORIZED_XRP_DESTINATIONS: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"
-      })
-    ).toThrow();
+  it("uses the mainnet XRPL endpoint when mainnet is selected without an RPC override", () => {
+    const config = loadConfig({
+      XRPL_NETWORK: "mainnet",
+      AUTHORIZED_XRP_DESTINATIONS: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"
+    });
+
+    expect(config.XRPL_NETWORK).toBe("mainnet");
+    expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
+    expect(config.REQUIRE_EXPLICIT_MAINNET_ENABLE).toBe(true);
   });
 
-  it("accepts explicitly enabled mainnet with destination allowlist and mainnet RPC", () => {
+  it("rejects mainnet without an authorized company destination", () => {
+    expect(() =>
+      loadConfig({
+        XRPL_NETWORK: "mainnet"
+      })
+    ).toThrow(/AUTHORIZED_XRP_DESTINATIONS/);
+  });
+
+  it("accepts explicitly configured mainnet with destination allowlist and RPC", () => {
     const config = loadConfig({
       XRPL_NETWORK: "mainnet",
       XRPL_RPC_URL: "wss://xrplcluster.com",
@@ -32,6 +42,7 @@ describe("environment safety", () => {
     });
 
     expect(config.XRPL_NETWORK).toBe("mainnet");
+    expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
     expect(config.AUTHORIZED_XRP_DESTINATIONS).toEqual(["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"]);
     expect(config.MAX_PAYMENT_DROPS).toBe(100000);
   });
