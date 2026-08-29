@@ -13,5 +13,13 @@ const close = async (signal: string) => {
 process.on("SIGINT", () => void close("SIGINT"));
 process.on("SIGTERM", () => void close("SIGTERM"));
 
-await app.listen({ host: "0.0.0.0", port: config.PORT });
-
+try {
+  await app.listen({ host: config.HOST, port: config.PORT });
+  app.log.info(
+    { host: config.HOST, port: config.PORT, xrplNetwork: config.XRPL_NETWORK },
+    "xrpl-defi-api listening"
+  );
+} catch (error) {
+  app.log.error({ error }, "server startup failed");
+  process.exit(1);
+}
