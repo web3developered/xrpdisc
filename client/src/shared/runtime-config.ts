@@ -16,5 +16,5 @@ export function readPublicConfig(key: keyof RuntimeConfig): string | undefined {
 }
 
 export function readXrplNetwork(): "testnet" | "mainnet" {
-  return readPublicConfig("VITE_XRPL_NETWORK") === "mainnet" ? "mainnet" : "testnet";
+  return readPublicConfig("VITE_XRPL_NETWORK") === "testnet" ? "testnet" : "mainnet";
 }
