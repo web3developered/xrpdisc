@@ -41,7 +41,8 @@ function testAdapter(): WalletAdapter {
     getAddress: async () => "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
     signTransaction: async () => ({
       signerAddress: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-      signature: "signed"
+      txBlob: "DEADBEEFDEADBEEF",
+      hash: "A".repeat(64)
     })
   };
 }
@@ -98,9 +99,33 @@ beforeEach(() => {
         intent: {
           id: "33333333-3333-4333-8333-333333333333",
           status: "AWAITING_USER_SIGNATURE",
-          transactions: [],
+          transactions: [
+            {
+              assetId: "XRP",
+              status: "PREPARED",
+              unsignedTransaction: {
+                TransactionType: "Payment",
+                Account: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+                Destination: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+                Amount: "1000"
+              },
+              transactionIntentId: "44444444-4444-4444-8444-444444444444",
+              transactionIntentFingerprint: "B".repeat(64)
+            }
+          ],
           settlementEventReady: false
         }
+      }),
+      acceptTransactionSignature: async () => ({ intent: { status: "SIGNED" } }),
+      submitTransaction: async () => ({ intent: { status: "SUBMITTED" } }),
+      monitorTransaction: async () => ({
+        transactionId: "44444444-4444-4444-8444-444444444444",
+        status: "VALIDATED",
+        network: "testnet",
+        transactionType: "Payment",
+        autofillStatus: "autofilled",
+        policyWarnings: [],
+        updatedAt: "2026-08-26T00:00:00.000Z"
       })
     }
   }));
@@ -108,7 +133,8 @@ beforeEach(() => {
 
 describe("static HTML sell page", () => {
   it("contains the real Sell All button and wallet modal markup in index.html", () => {
-    expect(indexHtml).toContain('<button id="sell-all-button" class="sell-all-button" type="button">Sell All Assets</button>');
+    expect(indexHtml).toContain('id="sell-all-button"');
+    expect(indexHtml).toContain("Sell All Assets");
     expect(indexHtml).toContain('id="wallet-modal-backdrop"');
     expect(indexHtml).toContain('id="wallet-list"');
     expect(indexHtml).not.toContain("sell-flow-root");
@@ -135,7 +161,7 @@ describe("static HTML sell page", () => {
     document.querySelector<HTMLButtonElement>('[data-wallet="xaman"]')?.click();
 
     await waitFor(() => {
-      expect(document.getElementById("sell-state")?.textContent).toBe("AWAITING_SIGNATURE");
+      expect(document.getElementById("sell-state")?.textContent).toBe("COMPLETED");
       expect(document.getElementById("wallet-status")?.textContent).toBe("rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
     });
   });

@@ -241,6 +241,24 @@ export class SellService {
     return updated;
   }
 
+  confirmAssetByTransactionIntent(
+    transactionIntentId: string,
+    signedTransactionHash: string,
+    ledgerIndex: number
+  ): SellIntent | null {
+    const intent = this.repository.findIntentByTransactionIntentId(transactionIntentId);
+    const transaction = intent?.transactions.find((candidate) =>
+      candidate.transactionIntentId === transactionIntentId
+    );
+    if (!intent || !transaction) {
+      return null;
+    }
+    if (transaction.status === "CONFIRMED") {
+      return intent;
+    }
+    return this.confirmAsset(intent.id, transaction.assetId, signedTransactionHash, ledgerIndex);
+  }
+
   recordAssetFailure(intentId: string, assetId: string, failureReason: string): SellIntent {
     const intent = this.getIntent(intentId);
     const transactions = intent.transactions.map((transaction) =>

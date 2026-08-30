@@ -15,6 +15,7 @@ const config: AppConfig = {
   MAX_PAYMENT_DROPS: 1_000_000,
   XRP_RESERVE_DROPS: 10_000_000,
   XRP_TRANSACTION_COST_DROPS: 12,
+  XRPL_LAST_LEDGER_SEQUENCE_OFFSET: 300,
   SUPPORTED_ISSUED_ASSETS: ["USD.rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/xrpl_defi",
   REDIS_URL: "redis://localhost:6379",

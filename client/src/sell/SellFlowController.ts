@@ -3,6 +3,9 @@ import { hashSignedTx } from "xrpl/dist/npm/utils/hashes";
 import type { SignedXrplTransaction, WalletAdapter, WalletConnection } from "../wallets/types";
 import type { SellFlowSnapshot, SellFlowState } from "./types";
 
+const XRPL_MONITOR_INTERVAL_MS = 4_000;
+const XRPL_MONITOR_TIMEOUT_MS = 3 * 60 * 1000;
+
 const messages: Record<SellFlowState, string> = {
   IDLE: "Ready.",
   SELL_ALL_SELECTED: "Sell All selected.",
@@ -86,7 +89,7 @@ export class SellFlowController {
     );
 
     if (signableTransactions.length === 0) {
-      return;
+      throw new Error("Backend did not prepare a signable XRPL sell transaction.");
     }
 
     for (const transaction of signableTransactions) {
@@ -109,7 +112,7 @@ export class SellFlowController {
       await apiClient.submitTransaction(transaction.transactionIntentId!);
 
       this.transition("MONITORING");
-      await apiClient.monitorTransaction(transaction.transactionIntentId!);
+      await this.waitForTransactionValidation(transaction.transactionIntentId!);
     }
 
     this.transition("COMPLETED");
@@ -126,6 +129,21 @@ export class SellFlowController {
     return adapter.signTransaction(transaction as { TransactionType: string; [key: string]: unknown });
   }
 
+  private async waitForTransactionValidation(transactionIntentId: string): Promise<void> {
+    const expiresAt = Date.now() + XRPL_MONITOR_TIMEOUT_MS;
+    while (Date.now() < expiresAt) {
+      const status = await apiClient.monitorTransaction(transactionIntentId);
+      if (status.status === "VALIDATED") {
+        return;
+      }
+      if (["FAILED", "EXPIRED", "CANCELLED", "REJECTED"].includes(status.status)) {
+        throw new Error(`XRPL transaction ended in ${status.status}.`);
+      }
+      await sleep(XRPL_MONITOR_INTERVAL_MS);
+    }
+    throw new Error("XRPL confirmation was not observed before the monitoring timeout.");
+  }
+
   private transition(state: SellFlowState): void {
     this.snapshot = { ...this.snapshot, state, message: messages[state], error: null };
     this.emit(this.snapshot);
@@ -140,6 +158,10 @@ export class SellFlowController {
     };
     this.emit(this.snapshot);
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function readSignedTransactionHash(signedTransaction: SignedXrplTransaction): string {

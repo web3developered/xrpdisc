@@ -32,7 +32,8 @@ const adapter: WalletAdapter = {
   getAddress: async () => connection.address,
   signTransaction: async () => ({
     signerAddress: connection.address,
-    signature: "signed"
+    txBlob: "DEADBEEFDEADBEEF",
+    hash: "A".repeat(64)
   })
 };
 
@@ -70,9 +71,40 @@ describe("SellFlowController", () => {
           intent: {
             id: "33333333-3333-4333-8333-333333333333",
             status: "AWAITING_USER_SIGNATURE",
-            transactions: [],
+            transactions: [
+              {
+                assetId: "XRP",
+                status: "PREPARED",
+                unsignedTransaction: {
+                  TransactionType: "Payment",
+                  Account: connection.address,
+                  Destination: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+                  Amount: "1000"
+                },
+                transactionIntentId: "44444444-4444-4444-8444-444444444444",
+                transactionIntentFingerprint: "B".repeat(64)
+              }
+            ],
             settlementEventReady: false
           }
+        });
+      }
+      if (url.endsWith("/api/v1/transactions/44444444-4444-4444-8444-444444444444/signature")) {
+        return Response.json({ intent: { status: "SIGNED" } });
+      }
+      if (url.endsWith("/api/v1/transactions/44444444-4444-4444-8444-444444444444/submit")) {
+        return Response.json({ intent: { status: "SUBMITTED" } });
+      }
+      if (url.endsWith("/api/v1/transactions/44444444-4444-4444-8444-444444444444/monitor")) {
+        return Response.json({
+          transactionId: "44444444-4444-4444-8444-444444444444",
+          status: "VALIDATED",
+          network: "testnet",
+          transactionType: "Payment",
+          autofillStatus: "autofilled",
+          policyWarnings: [],
+          monitoring: { terminal: true },
+          updatedAt: "2026-08-24T00:00:00.000Z"
         });
       }
       return Response.json({ status: "ok", service: "xrpl-defi-api", version: "0.1.0" });
@@ -89,15 +121,17 @@ describe("SellFlowController", () => {
         "CREATING_SESSION",
         "CREATING_SELL_QUOTE",
         "PREPARING_TRANSACTIONS",
-        "AWAITING_SIGNATURE"
+        "AWAITING_SIGNATURE",
+        "SUBMITTING",
+        "MONITORING",
+        "COMPLETED"
       ])
     );
     expect(snapshots.at(-1)).toMatchObject({
-      state: "AWAITING_SIGNATURE",
+      state: "COMPLETED",
       sessionId: "11111111-1111-4111-8111-111111111111",
       quoteId: "22222222-2222-4222-8222-222222222222",
       intentId: "33333333-3333-4333-8333-333333333333"
     });
   });
 });
-

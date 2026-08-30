@@ -50,12 +50,14 @@ export interface XrplGateway {
 
 export class XrplJsGateway implements XrplGateway {
   private readonly endpoints: string[];
+  private readonly lastLedgerSequenceOffset: number;
   private client: Client;
   private connecting: Promise<void> | null = null;
   private endpointIndex = 0;
 
   constructor(config: AppConfig) {
     this.endpoints = [...new Set([config.XRPL_RPC_URL, ...config.XRPL_RPC_FALLBACK_URLS])];
+    this.lastLedgerSequenceOffset = config.XRPL_LAST_LEDGER_SEQUENCE_OFFSET;
     this.client = new Client(this.endpoints[this.endpointIndex] ?? config.XRPL_RPC_URL);
   }
 
@@ -104,10 +106,18 @@ export class XrplJsGateway implements XrplGateway {
   }
 
   async autofillPayment(transaction: XrplPaymentTransaction): Promise<XrplPaymentTransaction> {
-    return await this.requestWithFailover(
+    const autofilled = await this.requestWithFailover(
       "autofill",
       (client) => client.autofill(transaction as never) as Promise<XrplPaymentTransaction>
     );
+    const ledgerIndex = await this.requestWithFailover("ledger_current", (client) => client.getLedgerIndex());
+    return {
+      ...autofilled,
+      LastLedgerSequence: Math.max(
+        autofilled.LastLedgerSequence ?? 0,
+        ledgerIndex + this.lastLedgerSequenceOffset
+      )
+    };
   }
 
   async submitSignedTransaction(txBlob: string): Promise<XrplSubmitResult> {

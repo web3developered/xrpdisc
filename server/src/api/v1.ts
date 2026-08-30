@@ -349,6 +349,17 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
   app.post<{ Params: { id: string } }>("/api/v1/transactions/:id/monitor", async (request, reply) => {
     try {
       const intent = await transactionIntentService.monitor(request.params.id);
+      if (
+        intent.status === "VALIDATED" &&
+        intent.submission?.ledgerIndex !== undefined &&
+        intent.signedTransaction?.signedTransactionHash
+      ) {
+        sellService.confirmAssetByTransactionIntent(
+          intent.id,
+          intent.submission.xrplHash ?? intent.signedTransaction.signedTransactionHash,
+          intent.submission.ledgerIndex
+        );
+      }
       await notify(app, observability, {
         name: "transaction.monitoring",
         transactionIntentId: intent.id,

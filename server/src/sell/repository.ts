@@ -31,9 +31,17 @@ export class InMemorySellRepository {
     return this.intents.get(id) ?? null;
   }
 
+  findIntentByTransactionIntentId(transactionIntentId: string): SellIntent | null {
+    for (const intent of this.intents.values()) {
+      if (intent.transactions.some((transaction) => transaction.transactionIntentId === transactionIntentId)) {
+        return intent;
+      }
+    }
+    return null;
+  }
+
   findIntentByIdempotencyKey(idempotencyKey: string): SellIntent | null {
     const id = this.idempotencyKeys.get(idempotencyKey);
     return id ? this.findIntent(id) : null;
   }
 }
-

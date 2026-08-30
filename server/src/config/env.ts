@@ -42,6 +42,7 @@ const envSchema = z
     MAX_PAYMENT_DROPS: z.coerce.number().int().positive().default(1_000_000),
     XRP_RESERVE_DROPS: z.coerce.number().int().positive().default(10_000_000),
     XRP_TRANSACTION_COST_DROPS: z.coerce.number().int().positive().default(12),
+    XRPL_LAST_LEDGER_SEQUENCE_OFFSET: z.coerce.number().int().positive().default(300),
     SUPPORTED_ISSUED_ASSETS: z
       .string()
       .default("")
