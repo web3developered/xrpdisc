@@ -85,8 +85,10 @@ export class SellService {
         eligibleSummary: eligibleAssets
           .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:eligible`)
           .join(";") || "none",
-        ineligibleSample: ineligibleAssets.slice(0,10).map((asset)=>`${asset.id}|kind=${asset.kind}|balance=${asset.balance}|spendable=${asset.spendableBalance}|eligible=${asset.eligible}|reason=${asset.ineligibilityReason??"none"}`).join(";")||"none",
-        assetDiagnostics: assets.map(asset=>({id:asset.id,kind:asset.kind,balance:asset.balance,spendable:asset.spendableBalance,eligible:asset.eligible,reason:asset.ineligibilityReason??"none"}))
+        ineligibleSample: ineligibleAssets
+          .slice(0, 10)
+          .map((asset) => `${asset.id}:${asset.kind}:${asset.spendableBalance}:ineligible`)
+          .join(";") || "none"
       }
     });
     const quote = this.repository.saveQuote({
