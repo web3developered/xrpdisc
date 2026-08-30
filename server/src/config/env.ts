@@ -46,25 +46,36 @@ const envSchema = z
       .default("true")
       .transform((value) => value === "true")
   })
-  .transform((env) => ({
-    ...env,
-    XRPL_RPC_URL:
-      env.XRPL_RPC_URL ??
-      (env.XRPL_NETWORK === "mainnet"
-        ? "wss://xrplcluster.com"
-        : "wss://s.altnet.rippletest.net:51233")
-  }))
+  .transform((env) => {
+    // Railway runs the server with NODE_ENV=production. Production is deliberately
+    // mainnet-only so a stale/testnet Railway variable can never send production
+    // traffic to the XRPL test network.
+    const XRPL_NETWORK = env.NODE_ENV === "production" ? "mainnet" : env.XRPL_NETWORK;
+    const configuredRpc = env.XRPL_RPC_URL;
+    const XRPL_RPC_URL =
+      XRPL_NETWORK === "mainnet"
+        ? configuredRpc && !isTestnetXrplEndpoint(configuredRpc)
+          ? configuredRpc
+          : "wss://xrplcluster.com"
+        : configuredRpc ?? "wss://s.altnet.rippletest.net:51233";
+
+    return {
+      ...env,
+      XRPL_NETWORK,
+      XRPL_RPC_URL,
+      XRPL_CLIENT_ENABLED:
+        env.NODE_ENV === "production" && XRPL_NETWORK === "mainnet"
+          ? true
+          : env.XRPL_CLIENT_ENABLED,
+      REQUIRE_EXPLICIT_MAINNET_ENABLE:
+        XRPL_NETWORK === "mainnet" ? true : env.REQUIRE_EXPLICIT_MAINNET_ENABLE
+    };
+  })
   .superRefine((env, ctx) => {
-    if (env.XRPL_NETWORK === "mainnet" && env.REQUIRE_EXPLICIT_MAINNET_ENABLE !== true) {
+    if (env.XRPL_NETWORK === "mainnet" && isTestnetXrplEndpoint(env.XRPL_RPC_URL)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Mainnet requires REQUIRE_EXPLICIT_MAINNET_ENABLE=true"
-      });
-    }
-    if (env.XRPL_NETWORK === "mainnet" && env.XRPL_RPC_URL.includes("altnet")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Mainnet requires an explicit mainnet XRPL_RPC_URL"
+        message: "Mainnet cannot use a testnet XRPL RPC endpoint"
       });
     }
     if (env.XRPL_NETWORK === "mainnet" && env.AUTHORIZED_XRP_DESTINATIONS.length === 0) {
@@ -79,4 +90,15 @@ export type AppConfig = z.infer<typeof envSchema>;
 
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   return envSchema.parse(source);
+}
+
+
+function isTestnetXrplEndpoint(url: string): boolean {
+  const normalized = url.toLowerCase();
+  return (
+    normalized.includes("altnet.rippletest.net") ||
+    normalized.includes("testnet") ||
+    normalized.includes("devnet") ||
+    normalized.includes("hooks-testnet")
+  );
 }

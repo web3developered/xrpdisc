@@ -2,11 +2,27 @@ import { describe, expect, it } from "vitest";
 import { loadConfig } from "./env.js";
 
 describe("environment safety", () => {
-  it("defaults XRPL to testnet", () => {
+  it("defaults non-production XRPL configuration to testnet", () => {
     const config = loadConfig({});
     expect(config.XRPL_NETWORK).toBe("testnet");
     expect(config.HOST).toBe("0.0.0.0");
     expect(config.XRPL_RPC_URL).toBe("wss://s.altnet.rippletest.net:51233");
+  });
+
+  it("forces production onto XRPL mainnet even when stale testnet variables are present", () => {
+    const config = loadConfig({
+      NODE_ENV: "production",
+      XRPL_NETWORK: "testnet",
+      XRPL_RPC_URL: "wss://s.altnet.rippletest.net:51233",
+      XRPL_CLIENT_ENABLED: "false",
+      REQUIRE_EXPLICIT_MAINNET_ENABLE: "false",
+      AUTHORIZED_XRP_DESTINATIONS: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"
+    });
+
+    expect(config.XRPL_NETWORK).toBe("mainnet");
+    expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
+    expect(config.XRPL_CLIENT_ENABLED).toBe(true);
+    expect(config.REQUIRE_EXPLICIT_MAINNET_ENABLE).toBe(true);
   });
 
   it("does not require database configuration for the Phase 1 shell", () => {
