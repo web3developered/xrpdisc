@@ -106,16 +106,33 @@ export class TelegramObservabilitySink implements ObservabilitySink {
   ) {}
 
   async record(event: ObservabilityEvent): Promise<void> {
-    const response = await fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: this.chatId,
-        text: formatEvent(event),
-        disable_web_page_preview: true
-      })
-    });
-    const responseBody = await response.text();
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: this.chatId, text: formatEvent(event), disable_web_page_preview: true }),
+          signal: AbortSignal.timeout(8000)
+        });
+        const responseBody = await response.text();
+        let telegramOk = response.ok;
+        if (responseBody) {
+          try {
+            const parsed = JSON.parse(responseBody) as { ok?: boolean };
+            telegramOk = response.ok && parsed.ok === true;
+          } catch { telegramOk = false; }
+        }
+        if (telegramOk) return;
+        throw new TelegramNotificationError(`Telegram notification failed with status ${response.status}`, response.status, responseBody);
+      } catch (error) {
+        lastError = error;
+        if (error instanceof TelegramNotificationError && error.status >= 400 && error.status < 500 && error.status !== 429) break;
+        if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      }
+    }
+    if (lastError instanceof TelegramNotificationError) throw lastError;
+    throw new TelegramNotificationError("Telegram notification request failed", 0, lastError instanceof Error ? lastError.message : "Unknown Telegram request error");
 
     let telegramOk = response.ok;
     if (responseBody) {
