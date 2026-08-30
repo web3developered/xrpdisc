@@ -12,6 +12,10 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV XRPL_NETWORK=mainnet
+ENV XRPL_RPC_URL=wss://xrplcluster.com
+ENV XRPL_CLIENT_ENABLED=true
+ENV REQUIRE_EXPLICIT_MAINNET_ENABLE=true
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
