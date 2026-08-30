@@ -134,7 +134,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
     const event: ObservabilityEvent = {
       name: "telegram.test",
-      flowId: _request.id,
+      flowId: request.id,
       status: "TEST",
       message: "Manual Telegram delivery test from XRPDISC backend",
       data: {
@@ -458,7 +458,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     } catch (error) {
       await notify(app, observability, {
         name: "wallet.xaman.sign_in_payload.failed",
-        flowId: _request.id,
+        flowId: request.id,
         walletProvider: "xaman",
         network: config.XRPL_NETWORK,
         status: "FAILED",
@@ -496,7 +496,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     } catch (error) {
       await notify(app, observability, {
         name: "wallet.xaman.transaction_payload.failed",
-        flowId: _request.id,
+        flowId: request.id,
         walletProvider: "xaman",
         network: config.XRPL_NETWORK,
         status: "FAILED",
@@ -533,7 +533,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     } catch (error) {
       await notify(app, observability, {
         name: "wallet.xaman.payload_status.failed",
-        flowId: _request.id,
+        flowId: request.id,
         walletProvider: "xaman",
         network: config.XRPL_NETWORK,
         status: "FAILED",
@@ -547,4 +547,3 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     }
   });
 }
-
