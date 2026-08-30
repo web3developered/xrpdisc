@@ -439,7 +439,7 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     }
   });
 
-  app.post("/api/v1/wallets/xaman/payloads/sign-in", async (_request, reply) => {
+  app.post("/api/v1/wallets/xaman/payloads/sign-in", async (request, reply) => {
     if (!xamanPayloadService) {
       return reply.code(503).send({
         error: "XAMAN_NOT_CONFIGURED",

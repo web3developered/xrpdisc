@@ -12,6 +12,7 @@ const config: AppConfig = {
   CORS_ORIGIN: "http://localhost:5173",
   XRPL_NETWORK: "testnet",
   XRPL_RPC_URL: "wss://s.altnet.rippletest.net:51233",
+  XRPL_RPC_FALLBACK_URLS: [],
   XRPL_CLIENT_ENABLED: false,
   AUTHORIZED_XRP_DESTINATIONS: ["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   MAX_PAYMENT_DROPS: 100_000_000,
@@ -150,6 +151,37 @@ describe("SellService", () => {
 
     expect(intent.transactions).toHaveLength(1);
     expect(intent.transactions[0]?.unsignedTransaction.Amount).toBe("489999988");
+  });
+
+  it("uses live XRPL reserve data when discovery provides it for a mainnet wallet", async () => {
+    const service = new SellService(
+      config,
+      new InMemorySellRepository(),
+      new StaticAssetDiscovery([
+        {
+          id: "xrp",
+          kind: "XRP",
+          currency: "XRP",
+          balance: "4999666",
+          spendableBalance: "4999666",
+          reserveRequirementDrops: "1000000",
+          eligible: true
+        }
+      ])
+    );
+
+    const quote = await service.createQuote(session);
+
+    expect(quote.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "xrp",
+          reserveRequirementDrops: "1000000",
+          spendableBalance: "3999654",
+          eligible: true
+        })
+      ])
+    );
   });
 
   it("records partial success and marks settlement handoff ready for confirmed assets only", async () => {

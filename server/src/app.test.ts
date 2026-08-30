@@ -9,6 +9,7 @@ const config: AppConfig = {
   CORS_ORIGIN: "http://localhost:5173",
   XRPL_NETWORK: "testnet",
   XRPL_RPC_URL: "wss://s.altnet.rippletest.net:51233",
+  XRPL_RPC_FALLBACK_URLS: [],
   XRPL_CLIENT_ENABLED: false,
   AUTHORIZED_XRP_DESTINATIONS: ["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"],
   MAX_PAYMENT_DROPS: 1_000_000,

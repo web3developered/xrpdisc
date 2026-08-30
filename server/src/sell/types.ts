@@ -10,6 +10,7 @@ export type DiscoveredSellAsset = {
   issuer?: string;
   balance: string;
   spendableBalance: string;
+  reserveRequirementDrops?: string;
   eligible: boolean;
   ineligibilityReason?: string;
 };

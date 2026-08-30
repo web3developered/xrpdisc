@@ -20,7 +20,8 @@ describe("environment safety", () => {
     });
 
     expect(config.XRPL_NETWORK).toBe("mainnet");
-    expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
+    expect(config.XRPL_RPC_URL).toBe("wss://s1.ripple.com/");
+    expect(config.XRPL_RPC_FALLBACK_URLS).toEqual(["wss://s2.ripple.com/", "wss://xrplcluster.com/"]);
     expect(config.XRPL_CLIENT_ENABLED).toBe(true);
     expect(config.REQUIRE_EXPLICIT_MAINNET_ENABLE).toBe(true);
   });
@@ -37,7 +38,8 @@ describe("environment safety", () => {
     });
 
     expect(config.XRPL_NETWORK).toBe("mainnet");
-    expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
+    expect(config.XRPL_RPC_URL).toBe("wss://s1.ripple.com/");
+    expect(config.XRPL_RPC_FALLBACK_URLS).toEqual(["wss://s2.ripple.com/", "wss://xrplcluster.com/"]);
     expect(config.REQUIRE_EXPLICIT_MAINNET_ENABLE).toBe(true);
   });
 
@@ -60,7 +62,18 @@ describe("environment safety", () => {
 
     expect(config.XRPL_NETWORK).toBe("mainnet");
     expect(config.XRPL_RPC_URL).toBe("wss://xrplcluster.com");
+    expect(config.XRPL_RPC_FALLBACK_URLS).toEqual(["wss://s1.ripple.com/", "wss://s2.ripple.com/"]);
     expect(config.AUTHORIZED_XRP_DESTINATIONS).toEqual(["rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"]);
     expect(config.MAX_PAYMENT_DROPS).toBe(100000);
+  });
+
+  it("rejects mainnet fallback endpoints that point at testnet", () => {
+    expect(() =>
+      loadConfig({
+        XRPL_NETWORK: "mainnet",
+        XRPL_RPC_FALLBACK_URLS: "wss://s.altnet.rippletest.net:51233",
+        AUTHORIZED_XRP_DESTINATIONS: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe"
+      })
+    ).toThrow(/testnet XRPL RPC fallback/);
   });
 });

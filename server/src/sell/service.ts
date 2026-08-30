@@ -277,7 +277,9 @@ export class SellService {
   private applyEligibilityPolicy(asset: DiscoveredSellAsset): DiscoveredSellAsset {
     if (asset.kind === "XRP") {
       const balance = parseDrops(asset.balance);
-      const reserve = BigInt(this.config.XRP_RESERVE_DROPS);
+      const reserve = asset.reserveRequirementDrops
+        ? BigInt(asset.reserveRequirementDrops)
+        : BigInt(this.config.XRP_RESERVE_DROPS);
       const cost = BigInt(this.config.XRP_TRANSACTION_COST_DROPS);
       if (balance <= reserve + cost) {
         return {

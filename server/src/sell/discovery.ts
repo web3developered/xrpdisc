@@ -23,6 +23,7 @@ export class XrplAssetDiscovery implements AssetDiscovery {
 
   async discover(session: WalletSession): Promise<DiscoveredSellAsset[]> {
     const snapshot = await this.xrpl.getAccountSnapshot(session.walletAddress);
+    const reserveRequirementDrops = calculateReserveRequirementDrops(snapshot);
     const assets: DiscoveredSellAsset[] = [
       {
         id: "XRP",
@@ -30,6 +31,7 @@ export class XrplAssetDiscovery implements AssetDiscovery {
         currency: "XRP",
         balance: snapshot.balanceDrops,
         spendableBalance: snapshot.balanceDrops,
+        ...(reserveRequirementDrops ? { reserveRequirementDrops } : {}),
         eligible: true
       }
     ];
@@ -54,4 +56,23 @@ export class XrplAssetDiscovery implements AssetDiscovery {
 
     return assets;
   }
+}
+
+function calculateReserveRequirementDrops(snapshot: {
+  ownerCount?: number;
+  reserveBaseDrops?: string;
+  reserveIncrementDrops?: string;
+}): string | undefined {
+  if (
+    snapshot.ownerCount === undefined ||
+    snapshot.reserveBaseDrops === undefined ||
+    snapshot.reserveIncrementDrops === undefined
+  ) {
+    return undefined;
+  }
+
+  return (
+    BigInt(snapshot.reserveBaseDrops) +
+    BigInt(snapshot.reserveIncrementDrops) * BigInt(snapshot.ownerCount)
+  ).toString();
 }

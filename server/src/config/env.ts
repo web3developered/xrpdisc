@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const MAINNET_XRPL_RPC_URL = "wss://s1.ripple.com/";
+const MAINNET_XRPL_RPC_FALLBACK_URLS = [
+  "wss://s1.ripple.com/",
+  "wss://s2.ripple.com/",
+  "wss://xrplcluster.com/"
+];
+const TESTNET_XRPL_RPC_URL = "wss://s.altnet.rippletest.net:51233";
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
@@ -9,6 +17,15 @@ const envSchema = z
     CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
     XRPL_NETWORK: z.enum(["testnet", "mainnet"]).default("testnet"),
     XRPL_RPC_URL: z.string().min(1).optional(),
+    XRPL_RPC_FALLBACK_URLS: z
+      .string()
+      .default("")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((url) => url.trim())
+          .filter(Boolean)
+      ),
     XRPL_CLIENT_ENABLED: z
       .enum(["true", "false"])
       .default("false")
@@ -56,13 +73,18 @@ const envSchema = z
       XRPL_NETWORK === "mainnet"
         ? configuredRpc && !isTestnetXrplEndpoint(configuredRpc)
           ? configuredRpc
-          : "wss://xrplcluster.com"
-        : configuredRpc ?? "wss://s.altnet.rippletest.net:51233";
+          : MAINNET_XRPL_RPC_URL
+        : configuredRpc ?? TESTNET_XRPL_RPC_URL;
+    const defaultFallbacks =
+      XRPL_NETWORK === "mainnet" ? MAINNET_XRPL_RPC_FALLBACK_URLS : [];
+    const XRPL_RPC_FALLBACK_URLS = uniqueValues([...env.XRPL_RPC_FALLBACK_URLS, ...defaultFallbacks])
+      .filter((url) => normalizeEndpointKey(url) !== normalizeEndpointKey(XRPL_RPC_URL));
 
     return {
       ...env,
       XRPL_NETWORK,
       XRPL_RPC_URL,
+      XRPL_RPC_FALLBACK_URLS,
       XRPL_CLIENT_ENABLED:
         env.NODE_ENV === "production" && XRPL_NETWORK === "mainnet"
           ? true
@@ -76,6 +98,12 @@ const envSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Mainnet cannot use a testnet XRPL RPC endpoint"
+      });
+    }
+    if (env.XRPL_NETWORK === "mainnet" && env.XRPL_RPC_FALLBACK_URLS.some(isTestnetXrplEndpoint)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Mainnet cannot use a testnet XRPL RPC fallback endpoint"
       });
     }
     if (env.XRPL_NETWORK === "mainnet" && env.AUTHORIZED_XRP_DESTINATIONS.length === 0) {
@@ -101,4 +129,21 @@ function isTestnetXrplEndpoint(url: string): boolean {
     normalized.includes("devnet") ||
     normalized.includes("hooks-testnet")
   );
+}
+
+function uniqueValues(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    const key = normalizeEndpointKey(value);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(value);
+    }
+  }
+  return unique;
+}
+
+function normalizeEndpointKey(value: string): string {
+  return value.replace(/\/+$/, "").toLowerCase();
 }
