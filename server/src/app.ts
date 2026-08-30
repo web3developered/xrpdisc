@@ -24,8 +24,15 @@ export async function buildApp(config: AppConfig) {
   await app.register(registerHealthRoutes, config);
   await app.register(registerV1Routes, config);
 
+  app.addHook("onResponse", async (request, reply) => {
+    request.log.info(
+      { method: request.method, url: request.url, statusCode: reply.statusCode },
+      "request completed"
+    );
+  });
+
   app.setErrorHandler((error, request, reply) => {
-    request.log.error({ error }, "request failed");
+    request.log.error({ error, method: request.method, url: request.url }, "request failed");
     reply.code(500).send({
       error: "INTERNAL_SERVER_ERROR",
       requestId: request.id
