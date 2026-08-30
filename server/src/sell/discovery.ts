@@ -23,6 +23,7 @@ export class XrplAssetDiscovery implements AssetDiscovery {
 
   async discover(session: WalletSession): Promise<DiscoveredSellAsset[]> {
     const snapshot = await this.xrpl.getAccountSnapshot(session.walletAddress);
+    console.info('[XRPDISC][DISCOVERY]', JSON.stringify({wallet:session.walletAddress,balanceDrops:snapshot.balanceDrops,trustlineCount:snapshot.trustlines.length,trustlines:snapshot.trustlines}));
     const assets: DiscoveredSellAsset[] = [
       {
         id: "XRP",
