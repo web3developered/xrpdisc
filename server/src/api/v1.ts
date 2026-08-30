@@ -456,6 +456,14 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       });
       return reply.code(201).send({ payload });
     } catch (error) {
+      await notify(app, observability, {
+        name: "wallet.xaman.sign_in_payload.failed",
+        flowId: request.id,
+        walletProvider: "xaman",
+        network: config.XRPL_NETWORK,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Xaman payload creation failed"
+      });
       return reply.code(502).send({
         error: "XAMAN_PAYLOAD_CREATE_FAILED",
         message: error instanceof Error ? error.message : "Xaman payload creation failed"
@@ -486,6 +494,14 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       });
       return reply.code(201).send({ payload });
     } catch (error) {
+      await notify(app, observability, {
+        name: "wallet.xaman.transaction_payload.failed",
+        flowId: request.id,
+        walletProvider: "xaman",
+        network: config.XRPL_NETWORK,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Xaman transaction payload creation failed"
+      });
       return reply.code(502).send({
         error: "XAMAN_PAYLOAD_CREATE_FAILED",
         message: error instanceof Error ? error.message : "Xaman payload creation failed"
@@ -515,6 +531,15 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
       }
       return reply.send({ payload });
     } catch (error) {
+      await notify(app, observability, {
+        name: "wallet.xaman.payload_status.failed",
+        flowId: request.id,
+        walletProvider: "xaman",
+        network: config.XRPL_NETWORK,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Xaman payload status lookup failed",
+        data: { payloadUuid: request.params.uuid }
+      });
       return reply.code(502).send({
         error: "XAMAN_PAYLOAD_STATUS_FAILED",
         message: error instanceof Error ? error.message : "Xaman payload status lookup failed"
