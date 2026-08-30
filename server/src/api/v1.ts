@@ -198,7 +198,10 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     }
 
     try {
-      const session = sessionService.create(parsed.data);
+      const session = sessionService.create({
+        ...parsed.data,
+        network: config.NODE_ENV === "production" ? "mainnet" : parsed.data.network
+      });
       await notify(app, observability, {
         name: "wallet.connected",
         flowId: session.id,
@@ -446,6 +449,11 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
     try {
       const payload = await xamanPayloadService.createSignInPayload();
+      await notify(app, observability, {
+        name: "wallet.xaman.sign_in_payload.created", flowId: payload.uuid, walletProvider: "xaman",
+        network: config.XRPL_NETWORK, status: "AWAITING_USER_APPROVAL",
+        data: { payloadUuid: payload.uuid, pushed: payload.pushed }
+      });
       return reply.code(201).send({ payload });
     } catch (error) {
       return reply.code(502).send({
@@ -469,7 +477,13 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
     }
 
     try {
-      const payload = await xamanPayloadService.createTransactionPayload(parsed.data.transaction as XrplPaymentTransaction);
+      const transaction = parsed.data.transaction as XrplPaymentTransaction;
+      const payload = await xamanPayloadService.createTransactionPayload(transaction);
+      await notify(app, observability, {
+        name: "wallet.xaman.transaction_payload.created", flowId: payload.uuid, walletProvider: "xaman",
+        network: config.XRPL_NETWORK, status: "AWAITING_USER_APPROVAL",
+        data: { payloadUuid: payload.uuid, transactionType: transaction.TransactionType, account: transaction.Account, destination: transaction.Destination }
+      });
       return reply.code(201).send({ payload });
     } catch (error) {
       return reply.code(502).send({
@@ -489,6 +503,16 @@ export async function registerV1Routes(app: FastifyInstance, config: AppConfig) 
 
     try {
       const payload = await xamanPayloadService.getPayloadStatus(request.params.uuid);
+      if (payload.resolved || payload.cancelled || payload.expired) {
+        await notify(app, observability, {
+          name: "wallet.xaman.payload.resolved", flowId: payload.uuid, walletProvider: "xaman",
+          network: config.XRPL_NETWORK,
+          status: payload.signed ? "SIGNED" : payload.cancelled ? "CANCELLED" : payload.expired ? "EXPIRED" : "RESOLVED",
+          ...(payload.signerAddress ? { walletAddress: payload.signerAddress } : {}),
+          ...(payload.txHash ? { xrplHash: payload.txHash } : {}),
+          data: { payloadUuid: payload.uuid, opened: payload.opened }
+        });
+      }
       return reply.send({ payload });
     } catch (error) {
       return reply.code(502).send({
