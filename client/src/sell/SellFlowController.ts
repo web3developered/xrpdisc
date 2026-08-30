@@ -62,7 +62,7 @@ export class SellFlowController {
   }
 
   private async startSellAll(connection: WalletConnection, adapter: WalletAdapter): Promise<void> {
-    const network = connection.network === "mainnet" ? "mainnet" : apiClient.defaultNetwork();
+    const network = connection.network === "testnet" ? "testnet" : "mainnet";
     this.transition("CREATING_SESSION");
     const session = await apiClient.createSession({
       walletAddress: connection.address,
