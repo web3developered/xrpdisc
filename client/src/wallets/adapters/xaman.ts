@@ -77,7 +77,7 @@ export class XamanAdapter extends BaseWalletAdapter {
       id: this.id,
       name: this.name,
       address: resolved.signerAddress,
-      network: "unknown",
+      network: "mainnet",
       connectedAt: new Date().toISOString()
     });
   }
