@@ -35,7 +35,5 @@ Environment:
 - `SUPPORTED_ISSUED_ASSETS` is a comma-separated issued-asset allowlist using `CURRENCY.ISSUER`.
 - `XAMAN_API_SECRET` is backend-only and must never be configured as `VITE_XAMAN_API_SECRET`.
 
-Railway deployment is configured for separate frontend and backend services. Production readiness is
-still NOT IMPLEMENTED because Postgres, Redis, XRPL autofill, live asset discovery, submission,
-confirmation monitoring, and durable settlement handoff are not complete.
+Railway deployment is configured for separate frontend and backend services. The current deployment uses the configured XRPL gateway for live mainnet asset discovery, autofill, submission, and monitoring. Persistence remains in-memory until Postgres/Redis are wired into the repositories.
 
