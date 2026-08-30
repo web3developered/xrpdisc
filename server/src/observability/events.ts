@@ -134,23 +134,6 @@ export class TelegramObservabilitySink implements ObservabilitySink {
     if (lastError instanceof TelegramNotificationError) throw lastError;
     throw new TelegramNotificationError("Telegram notification request failed", 0, lastError instanceof Error ? lastError.message : "Unknown Telegram request error");
 
-    let telegramOk = response.ok;
-    if (responseBody) {
-      try {
-        const parsed = JSON.parse(responseBody) as { ok?: boolean };
-        telegramOk = response.ok && parsed.ok === true;
-      } catch {
-        telegramOk = false;
-      }
-    }
-
-    if (!telegramOk) {
-      throw new TelegramNotificationError(
-        `Telegram notification failed with status ${response.status}`,
-        response.status,
-        responseBody
-      );
-    }
   }
 }
 
